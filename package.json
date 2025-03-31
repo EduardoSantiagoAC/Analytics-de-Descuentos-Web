@@ -11,5 +11,8 @@
   "description": "",
   "dependencies": {
     "mongoose": "^8.13.1"
+  },
+  "devDependencies": {
+    "openssl": "^2.0.0"
   }
 }
