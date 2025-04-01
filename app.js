@@ -2,8 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
-const scraper = require('utils/scraper');
-const Producto = require('models/Producto');
+const scraper = require('/utils/scraper');
+const Producto = require('/models/Producto');
 
 // Inicializar Express
 const app = express();
