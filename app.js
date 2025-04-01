@@ -2,8 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
-const scraper = require('utils/scraper');
-const Producto = require('models/Producto');
+const scraper = require('Utils/Scraper');
+const Producto = require('Models/Producto');
 
 // Inicializar Express
 const app = express();
@@ -56,15 +56,15 @@ app.get('/', (req, res) => {
   res.json({ 
     status: 'online',
     services: {
-      scraping: '/scraping',
-      productos: '/productos'
+      scraping: '/Scraping',
+      productos: '/Productos'
     }
   });
 });
 
 // Importar rutas
-const scrapingRoutes = require('routes/scraping');
-app.use('/scraping', scrapingRoutes);
+const scrapingRoutes = require('Routes/Scraping');
+app.use('/Scraping', scrapingRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {
