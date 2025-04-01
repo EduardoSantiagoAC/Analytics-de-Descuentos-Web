@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const scraper = require('/Utils/Scraper');
+const scraper = require('../Utils/Scraper.js');
 
 // Endpoint para scraping programado
 router.post('/amazon', async (req, res) => {
