@@ -10,8 +10,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.8.4",
+    "cheerio": "^1.0.0",
     "dotenv": "^16.4.7",
-    "mongoose": "^8.13.1"
+    "express": "^5.1.0",
+    "mongoose": "^8.13.1",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^24.4.0"
   },
   "devDependencies": {
     "openssl": "^2.0.0"
