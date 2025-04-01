@@ -18,7 +18,7 @@ const productoSchema = new mongoose.Schema({
 
 // Actualiza histórico automáticamente
 productoSchema.pre('save', function(next) {
-  if (this.isModified('precio')) {
+  if (this.isModified('precioo')) {
     this.historicoPrecios.push({ precio: this.precio });
   }
   next();

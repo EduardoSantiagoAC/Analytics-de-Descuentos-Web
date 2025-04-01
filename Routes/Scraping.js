@@ -20,7 +20,7 @@ router.post('/mercadolibre', async (req, res) => {
     const results = await scraper.scrapeMercadoLibre(url);
     res.json(results);
   } catch (error) {
-    res.status(500).json({ error: 'Error en scraping' });
+    res.status(500).json({ error: 'Error en scraping .' });
   }
 });
 
