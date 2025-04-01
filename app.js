@@ -63,7 +63,7 @@ app.get('/', (req, res) => {
 });
 
 // Importar rutas
-const scrapingRoutes = require('Routes/Scraping');
+const scrapingRoutes = require('./Routes/Scraping.js');
 app.use('/Scraping', scrapingRoutes);
 
 // Manejo de errores
