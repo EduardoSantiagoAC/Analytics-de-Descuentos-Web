@@ -9,8 +9,14 @@ const Producto = require('./Models/Producto.js');
 const app = express();
 app.use(express.json());
 
-// Conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+// Conexión a MongoDB (configuración mejorada)
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  retryWrites: true,
+  w: 'majority'
+})
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch(err => console.error('❌ Error de conexión:', err));
 
@@ -20,13 +26,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Tareas programadas con node-cron
+// --- Tareas programadas con node-cron (actualizadas) ---
 cron.schedule('0 3 * * *', async () => {
   console.log('⏰ Iniciando scraping programado...');
   try {
-    // Scraping para productos clave
-    await scraper.scrapeAmazon('PlayStation 5');
-    await scraper.scrapeAmazon('Xbox Series X');
+    // Scraping para productos clave (ahora con manejo de errores por producto)
+    const productos = ['PlayStation 5', 'Xbox Series X', 'Nintendo Switch OLED'];
+    
+    for (const producto of productos) {
+      try {
+        await scraper.scrapeAmazon(producto);
+        console.log(`✔ ${producto} scrapeado correctamente`);
+      } catch (error) {
+        console.error(`✖ Error con ${producto}:`, error.message);
+      }
+    }
+
     await scraper.scrapeMercadoLibre('https://listado.mercadolibre.com.mx/consolas-videojuegos/playstation-5');
     
     console.log('✅ Scraping completado exitosamente');
@@ -38,50 +53,89 @@ cron.schedule('0 3 * * *', async () => {
   timezone: "America/Mexico_City"
 });
 
-// Tarea cada 6 horas para verificar escasez
+// Tarea cada 6 horas para verificar escasez (optimizada)
 cron.schedule('0 */6 * * *', async () => {
-  const productosEscasos = await Producto.find({ 
-    stock: { $lt: '$umbralEscasez' },
-    fechaActualizacion: { $gte: new Date(Date.now() - 24*60*60*1000) }
-  });
-  
-  if (productosEscasos.length > 0) {
-    console.log('⚠️ Productos con bajo stock:', productosEscasos.map(p => p.nombre));
-    // Aquí podrías integrar un servicio de notificaciones
+  try {
+    const productosEscasos = await Producto.aggregate([
+      {
+        $match: {
+          $expr: { $lt: ["$stock", "$umbralEscasez"] },
+          fechaActualizacion: { $gte: new Date(Date.now() - 24*60*60*1000) }
+        }
+      },
+      { $project: { nombre: 1, stock: 1, umbralEscasez: 1 } }
+    ]);
+    
+    if (productosEscasos.length > 0) {
+      console.log('⚠️ Productos con bajo stock:');
+      productosEscasos.forEach(p => {
+        console.log(`- ${p.nombre} (Stock: ${p.stock} < ${p.umbralEscasez})`);
+      });
+    }
+  } catch (error) {
+    console.error('Error en verificación de stock:', error);
   }
 });
 
-// Rutas básicas
+// --- Rutas básicas (actualizadas) ---
 app.get('/', (req, res) => {
   res.json({ 
     status: 'online',
     services: {
       scraping: '/Scraping',
-      productos: '/Productos'
-    }
+      productos: '/Productos',
+      nuevo_scraping: '/scraping/amazon'  // Nueva ruta añadida
+    },
+    version: '1.1.0'
   });
 });
 
-// Importar rutas
-const scrapingRoutes = require('./Routes/Scraping.js');
-app.use('/Scraping', scrapingRoutes);
+// --- Importar rutas (actualizado para incluir nuevo sistema) ---
+const scrapingRoutes = require('../Routes/Scraping.js');
+const scrapingAmazonRoutes = require('../Routes/scrapingRoutes');  // Nueva ruta
 
-// Manejo de errores
+app.use('/Scraping', scrapingRoutes);
+app.use('/scraping', scrapingAmazonRoutes);  // Nueva línea
+
+// --- Manejo de errores mejorado ---
 app.use((err, req, res, next) => {
-  console.error('🔥 Error:', err.stack);
-  res.status(500).json({ error: 'Algo salió mal' });
+  console.error('🔥 Error:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    timestamp: new Date().toISOString()
+  });
+  
+  res.status(500).json({ 
+    error: 'Algo salió mal',
+    detalle: process.env.NODE_ENV === 'development' ? err.message : null
+  });
 });
 
-// Iniciar servidor
+// Iniciar servidor (con más información)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
-  console.log('🔍 Scraping programado para ejecutarse diariamente a las 3:00 AM CST');
+  console.log(`
+  🚀 Servidor escuchando en http://localhost:${PORT}
+  ├─ 🔍 Scraping programado: 3:00 AM CST
+  ├─ 🔄 Verificación de stock: Cada 6 horas
+  └─ 📊 Nuevo endpoint: POST /scraping/amazon
+  `);
 });
 
-// Manejo de cierre limpio
+// Manejo de cierre limpio (mejorado)
 process.on('SIGINT', async () => {
-  await mongoose.connection.close();
-  console.log('🛑 MongoDB desconectado');
-  process.exit(0);
+  try {
+    await mongoose.connection.close();
+    console.log('🛑 MongoDB desconectado correctamente');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error al desconectar MongoDB:', error);
+    process.exit(1);
+  }
+});
+
+// Nuevo: Manejo de errores no capturados
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
 });
