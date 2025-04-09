@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cron = require('node-cron');
 const scraper = require('./Utils/Scraper.js');
 const Producto = require('./Models/Producto.js');
+const path = require('path');
 
 // Inicializar Express
 const app = express();
@@ -30,7 +31,6 @@ app.use((req, res, next) => {
 cron.schedule('0 3 * * *', async () => {
   console.log('⏰ Iniciando scraping programado...');
   try {
-    // Scraping para productos clave (ahora con manejo de errores por producto)
     const productos = ['PlayStation 5', 'Xbox Series X', 'Nintendo Switch OLED'];
     
     for (const producto of productos) {
@@ -53,7 +53,7 @@ cron.schedule('0 3 * * *', async () => {
   timezone: "America/Mexico_City"
 });
 
-// Tarea cada 6 horas para verificar escasez (optimizada)
+// Tarea cada 6 horas para verificar escasez
 cron.schedule('0 */6 * * *', async () => {
   try {
     const productosEscasos = await Producto.aggregate([
@@ -82,20 +82,16 @@ app.get('/', (req, res) => {
   res.json({ 
     status: 'online',
     services: {
-      scraping: '/Scraping',
-      productos: '/Productos',
-      nuevo_scraping: '/scraping/amazon'  // Nueva ruta añadida
+      scraping: '/api/scraping',
+      productos: '/api/productos'
     },
     version: '1.1.0'
   });
 });
 
-// --- Importar rutas (actualizado para incluir nuevo sistema) ---
-const scrapingRoutes = require('./Routes/Scraping.js');
-const scrapingAmazonRoutes = require('./Routes/scrapingRoutes');  // Nueva ruta
-
-app.use('/Scraping', scrapingRoutes);
-app.use('/scraping', scrapingAmazonRoutes);  // Nueva línea
+// --- Importar rutas (sistema unificado) ---
+const apiRoutes = require('./Routes/apiRoutes'); // Archivo principal de rutas
+app.use('/api', apiRoutes);
 
 // --- Manejo de errores mejorado ---
 app.use((err, req, res, next) => {
@@ -112,18 +108,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Iniciar servidor (con más información)
+// Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`
   🚀 Servidor escuchando en http://localhost:${PORT}
   ├─ 🔍 Scraping programado: 3:00 AM CST
   ├─ 🔄 Verificación de stock: Cada 6 horas
-  └─ 📊 Nuevo endpoint: POST /scraping/amazon
+  └─ 📊 Endpoints disponibles:
+     ├─ POST /api/scraping/amazon
+     ├─ GET  /api/productos
+     └─ GET  /api/scraping/history
   `);
 });
 
-// Manejo de cierre limpio (mejorado)
+// Manejo de cierre limpio
 process.on('SIGINT', async () => {
   try {
     await mongoose.connection.close();
@@ -135,7 +134,6 @@ process.on('SIGINT', async () => {
   }
 });
 
-// Nuevo: Manejo de errores no capturados
 process.on('unhandledRejection', (reason, promise) => {
   console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
 });
