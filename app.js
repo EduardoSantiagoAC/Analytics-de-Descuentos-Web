@@ -91,8 +91,8 @@ app.get('/', (req, res) => {
 });
 
 // --- Importar rutas (actualizado para incluir nuevo sistema) ---
-const scrapingRoutes = require('../Routes/Scraping.js');
-const scrapingAmazonRoutes = require('../Routes/scrapingRoutes');  // Nueva ruta
+const scrapingRoutes = require('./Routes/Scraping.js');
+const scrapingAmazonRoutes = require('./Routes/scrapingRoutes');  // Nueva ruta
 
 app.use('/Scraping', scrapingRoutes);
 app.use('/scraping', scrapingAmazonRoutes);  // Nueva línea
