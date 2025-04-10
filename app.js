@@ -5,25 +5,25 @@ const cron = require('node-cron');
 const scraper = require('./Utils/Scraper.js');
 const Producto = require('./Models/Producto.js');
 
-// Inicializar Express
+
 const app = express();
 app.use(express.json());
 
-// Conexión a MongoDB (versión actualizada)
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch(err => {
     console.error('❌ Error de conexión a MongoDB:', err);
-    process.exit(1); // Salir si no hay conexión a la base de datos
+    process.exit(1); 
   });
 
-// Middleware mejorado
+
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// --- Tareas programadas optimizadas ---
+
 cron.schedule('0 3 * * *', () => {
   console.log('⏰ Ejecutando scraping programado...');
   const scrapingTasks = [
@@ -47,7 +47,7 @@ cron.schedule('0 3 * * *', () => {
   scheduled: true
 });
 
-// --- Rutas directas ---
+
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
@@ -65,7 +65,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Ruta de scraping
+
 app.post('/scraping/amazon', async (req, res) => {
   try {
     if (!req.body.producto) {
@@ -77,7 +77,7 @@ app.post('/scraping/amazon', async (req, res) => {
       return res.status(404).json({ message: 'No se encontraron productos' });
     }
 
-    // Guardar en MongoDB
+    
     const operaciones = resultados.map(item => 
       Producto.findOneAndUpdate(
         { urlProducto: item.urlProducto },
@@ -103,7 +103,7 @@ app.post('/scraping/amazon', async (req, res) => {
   }
 });
 
-// Ruta para obtener productos
+
 app.get('/productos', async (req, res) => {
   try {
     const { limit = 50, sort = '-fechaActualizacion' } = req.query;
@@ -124,7 +124,7 @@ app.get('/productos', async (req, res) => {
   }
 });
 
-// Manejo de errores mejorado
+
 app.use((err, req, res, next) => {
   console.error('🔥 Error:', {
     path: req.path,
@@ -139,7 +139,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Iniciar servidor
+
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`
@@ -152,7 +152,7 @@ const server = app.listen(PORT, () => {
   `);
 });
 
-// Manejo de cierre mejorado
+
 const shutdown = async () => {
   console.log('\n🛑 Recibida señal de apagado...');
   server.close(async () => {

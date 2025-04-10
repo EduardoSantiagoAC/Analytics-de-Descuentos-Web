@@ -4,11 +4,11 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const Producto = require('../Models/Producto.js');
 
-// Configuración avanzada para evitar bloqueos
+
 puppeteer.use(StealthPlugin());
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
 
-// Tiempos de espera configurados
+
 const WAIT_OPTIONS = { waitUntil: 'domcontentloaded', timeout: 60000 };
 const SELECTOR_TIMEOUT = 30000;
 
@@ -31,16 +31,16 @@ module.exports = {
     try {
       const page = await browser.newPage();
       
-      // Configuración avanzada de la página
+      
       await page.setUserAgent(USER_AGENT);
       await page.setViewport({ width: 1366, height: 768 });
       await page.setJavaScriptEnabled(true);
       await page.setDefaultNavigationTimeout(60000);
 
-      // Navegación con manejo de errores
+      
       await page.goto(`https://www.amazon.com.mx/s?k=${encodeURIComponent(productoBusqueda)}`, WAIT_OPTIONS);
 
-      // Espera selectiva para diferentes patrones de página
+      
       try {
         await page.waitForSelector('.s-result-item', { timeout: SELECTOR_TIMEOUT });
       } catch (e) {
@@ -48,7 +48,7 @@ module.exports = {
         return [];
       }
 
-      // Extracción de datos mejorada con múltiples selectores
+      
       const data = await page.evaluate(() => {
         const extractPrice = (element) => {
           if (!element) return null;
@@ -93,7 +93,7 @@ module.exports = {
         }).filter(item => item !== null);
       });
 
-      // Guardar en MongoDB con manejo de duplicados
+      
       if (data.length > 0) {
         const bulkOps = data.map(item => ({
           updateOne: {
@@ -117,7 +117,7 @@ module.exports = {
 
   async scrapeMercadoLibre(url) {
     try {
-      // Configuración de headers para MercadoLibre
+      
       const headers = {
         'User-Agent': USER_AGENT,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -128,7 +128,7 @@ module.exports = {
       const $ = cheerio.load(data);
       const productos = [];
 
-      // Selectores mejorados para MercadoLibre
+      
       $('.ui-search-result, .andes-card').each((index, el) => {
         try {
           const nombre = $(el).find('.ui-search-item__title, .ui-search-item__group__element').text().trim();
@@ -161,7 +161,7 @@ module.exports = {
         }
       });
 
-      // Operación bulk para MongoDB
+      
       if (productos.length > 0) {
         const bulkOps = productos.map(item => ({
           updateOne: {

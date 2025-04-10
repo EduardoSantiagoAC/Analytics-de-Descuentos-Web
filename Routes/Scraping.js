@@ -50,7 +50,7 @@ router.post('/amazon', async (req, res) => {
 
     const results = await scraper.scrapeAmazon(producto);
     
-    // Estadísticas avanzadas
+    
     const conDescuento = results.filter(p => p.estadoDescuento === 'Descuento');
     const mayorDescuento = [...conDescuento].sort((a, b) => b.porcentajeDescuento - a.porcentajeDescuento)[0];
     const precioPromedio = results.reduce((acc, curr) => acc + curr.precio, 0) / results.length;
@@ -112,7 +112,7 @@ router.post('/mercadolibre', async (req, res) => {
 
     const results = await scraper.scrapeMercadoLibre(url);
     
-    // Análisis de descuentos
+   
     const analisisDescuentos = results.reduce((acc, curr) => {
       if (curr.estadoDescuento === 'Descuento') {
         acc.total++;
