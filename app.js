@@ -9,103 +9,161 @@ const Producto = require('./Models/Producto.js');
 const app = express();
 app.use(express.json());
 
-// Conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000
-})
+// Conexión a MongoDB (versión actualizada)
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Conectado a MongoDB'))
-  .catch(err => console.error('❌ Error de conexión:', err));
+  .catch(err => {
+    console.error('❌ Error de conexión a MongoDB:', err);
+    process.exit(1); // Salir si no hay conexión a la base de datos
+  });
 
-// Middleware básico
+// Middleware mejorado
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// --- Tareas programadas ---
-cron.schedule('0 3 * * *', async () => {
-  console.log('⏰ Iniciando scraping programado...');
-  try {
-    const productos = ['PlayStation 5', 'Xbox Series X', 'Nintendo Switch OLED'];
-    
-    for (const producto of productos) {
-      try {
-        await scraper.scrapeAmazon(producto);
-        console.log(`✔ ${producto} scrapeado correctamente`);
-      } catch (error) {
-        console.error(`✖ Error con ${producto}:`, error.message);
-      }
-    }
+// --- Tareas programadas optimizadas ---
+cron.schedule('0 3 * * *', () => {
+  console.log('⏰ Ejecutando scraping programado...');
+  const scrapingTasks = [
+    scraper.scrapeAmazon('PlayStation 5'),
+    scraper.scrapeAmazon('Xbox Series X'),
+    scraper.scrapeAmazon('Nintendo Switch OLED'),
+    scraper.scrapeMercadoLibre('https://listado.mercadolibre.com.mx/consolas-videojuegos/playstation-5')
+  ];
 
-    await scraper.scrapeMercadoLibre('https://listado.mercadolibre.com.mx/consolas-videojuegos/playstation-5');
-    
-    console.log('✅ Scraping completado exitosamente');
-  } catch (error) {
-    console.error('❌ Error en scraping programado:', error);
-  }
+  Promise.allSettled(scrapingTasks)
+    .then(results => {
+      results.forEach((result, i) => {
+        if (result.status === 'rejected') {
+          console.error(`✖ Error en tarea ${i}:`, result.reason.message);
+        }
+      });
+      console.log('✅ Scraping completado');
+    });
 }, {
-  scheduled: true,
-  timezone: "America/Mexico_City"
+  timezone: "America/Mexico_City",
+  scheduled: true
 });
 
-// --- Rutas existentes ---
+// --- Rutas directas ---
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'online',
-    services: {
-      scraping: '/scraping',
-      productos: '/productos'
+    endpoints: {
+      scraping: {
+        method: 'POST',
+        path: '/scraping/amazon',
+        body: { producto: 'String' }
+      },
+      productos: {
+        method: 'GET',
+        path: '/productos'
+      }
     }
   });
 });
 
-// --- Importar rutas MANUALMENTE (sin archivo apiRoutes) ---
-// 1. Ruta para el scraping de Amazon
+// Ruta de scraping
 app.post('/scraping/amazon', async (req, res) => {
   try {
-    const { producto } = req.body;
-    const resultados = await scraper.scrapeAmazon(producto);
-    res.json({ success: true, data: resultados });
+    if (!req.body.producto) {
+      return res.status(400).json({ error: 'El campo "producto" es requerido' });
+    }
+
+    const resultados = await scraper.scrapeAmazon(req.body.producto);
+    if (resultados.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron productos' });
+    }
+
+    // Guardar en MongoDB
+    const operaciones = resultados.map(item => 
+      Producto.findOneAndUpdate(
+        { urlProducto: item.urlProducto },
+        { $set: item, $push: { historicoPrecios: { precio: item.precio } } },
+        { upsert: true, new: true }
+      )
+    );
+
+    const productosGuardados = await Promise.all(operaciones);
+    res.json({
+      success: true,
+      count: productosGuardados.length,
+      data: productosGuardados
+    });
+
   } catch (error) {
     console.error('Error en scraping manual:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al realizar scraping',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
-// 2. Ruta para obtener productos
+// Ruta para obtener productos
 app.get('/productos', async (req, res) => {
   try {
-    const productos = await Producto.find().sort({ fechaActualizacion: -1 });
-    res.json({ success: true, data: productos });
+    const { limit = 50, sort = '-fechaActualizacion' } = req.query;
+    const productos = await Producto.find()
+      .sort(sort)
+      .limit(Number(limit));
+
+    res.json({
+      success: true,
+      count: productos.length,
+      data: productos
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Error al obtener productos'
+    });
   }
 });
 
-// --- Manejo de errores ---
+// Manejo de errores mejorado
 app.use((err, req, res, next) => {
-  console.error('🔥 Error:', err.stack);
-  res.status(500).json({ error: 'Algo salió mal' });
+  console.error('🔥 Error:', {
+    path: req.path,
+    method: req.method,
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+  
+  res.status(500).json({ 
+    error: 'Error interno del servidor',
+    ...(process.env.NODE_ENV === 'development' && { details: err.message })
+  });
 });
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`
   🚀 Servidor escuchando en http://localhost:${PORT}
   ├─ 🔍 Scraping programado: 3:00 AM CST
   ├─ 🔄 Endpoints disponibles:
-  │  ├─ POST /scraping/amazon
-  │  └─ GET  /productos
-  └─ 📊 Prueba con: curl -X POST http://localhost:3000/scraping/amazon -H "Content-Type: application/json" -d '{"producto":"PlayStation 5"}'
+  │  ├─ POST /scraping/amazon - Body: { "producto": "Nombre del producto" }
+  │  └─ GET  /productos?limit=10&sort=-precio
+  └─ 📌 Ejemplo: curl -X POST http://localhost:3000/scraping/amazon -H "Content-Type: application/json" -d '{"producto":"PlayStation 5"}'
   `);
 });
 
-// Manejo de cierre limpio
-process.on('SIGINT', async () => {
-  await mongoose.connection.close();
-  console.log('🛑 MongoDB desconectado');
-  process.exit(0);
+// Manejo de cierre mejorado
+const shutdown = async () => {
+  console.log('\n🛑 Recibida señal de apagado...');
+  server.close(async () => {
+    await mongoose.connection.close();
+    console.log('✅ Servidores desconectados correctamente');
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+process.on('unhandledRejection', (err) => {
+  console.error('⚠️ Unhandled Rejection:', err.message);
 });
