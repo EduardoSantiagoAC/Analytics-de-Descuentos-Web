@@ -1,70 +1,73 @@
-// screens/HomeScreen.tsx
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, FlatList, Image, TouchableOpacity } from 'react-native';
+import React from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import Header from "../componentes/Cabezal";
+import CategoryTabs from "../componentes/Categorias";
+import PromoBanner from "../componentes/promo";
+import AlertCard from "../componentes/Alertas";
+import ProductCard from "../componentes/TarjetaProducto";
+
+const dummyProducts = [
+  {
+    id: 1,
+    title: "Camiseta",
+    image: "https://via.placeholder.com/100x100.png?text=Camiseta",
+    oldPrice: 9.99,
+    price: 6.99,
+    discount: 30,
+  },
+  {
+    id: 2,
+    title: "Auriculares",
+    image: "https://via.placeholder.com/100x100.png?text=Auriculares",
+    oldPrice: 59.99,
+    price: 44.99,
+    discount: 25,
+  },
+  {
+    id: 3,
+    title: "Canasta",
+    image: "https://via.placeholder.com/100x100.png?text=Canasta",
+    oldPrice: 24.99,
+    price: 22.49,
+    discount: 10,
+  },
+  {
+    id: 4,
+    title: "Portátil",
+    image: "https://via.placeholder.com/100x100.png?text=Portátil",
+    oldPrice: 799.99,
+    price: 679.99,
+    discount: 15,
+  },
+];
 
 const HomeScreen = () => {
   return (
     <ScrollView style={styles.container}>
-      <TextInput
-        placeholder="Buscar productos"
-        style={styles.searchBar}
-      />
-
-      <Text style={styles.sectionTitle}>Productos destacados</Text>
-      <FlatList
-        data={[]} // productos vacíos por ahora
-        horizontal
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.productCard}>
-            <Image source={{ uri: '' }} style={styles.productImage} />
-            <Text style={styles.productName}>Nombre</Text>
-            <Text style={styles.productPrice}>$0.00</Text>
-          </TouchableOpacity>
-        )}
-        showsHorizontalScrollIndicator={false}
-      />
+      <Header />
+      <CategoryTabs />
+      <PromoBanner />
+      <AlertCard />
+      <View style={styles.productsWrapper}>
+        {dummyProducts.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </View>
     </ScrollView>
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 10,
+    padding: 16,
+    backgroundColor: "#fefefe",
   },
-  searchBar: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    fontSize: 16,
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  productCard: {
-    width: 140,
-    marginRight: 10,
-  },
-  productImage: {
-    width: '100%',
-    height: 140,
-    borderRadius: 10,
-    backgroundColor: '#eee',
-  },
-  productName: {
-    fontSize: 14,
-    marginTop: 5,
-  },
-  productPrice: {
-    fontWeight: 'bold',
-    color: '#d0021b',
+  productsWrapper: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
 });
+
+export default HomeScreen;
