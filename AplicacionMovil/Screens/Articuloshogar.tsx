@@ -3,29 +3,29 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import ProductCard from "../componentes/TarjetaProducto";
 import { Product } from "../componentes/TarjetaProducto";
 
-const ropaProductos: Product[] = [
+const hogarProductos: Product[] = [
   {
-    id: 1,
-    title: "Camiseta básica",
-    image: "https://via.placeholder.com/100x100.png?text=Camiseta",
-    oldPrice: 19.99,
-    price: 9.99,
-    discount: 50,
+    id: 5,
+    title: "Juego de sábanas",
+    image: "https://via.placeholder.com/100x100.png?text=Sábanas",
+    oldPrice: 59.99,
+    price: 44.99,
+    discount: 25,
   },
   {
-    id: 2,
-    title: "Pantalones jeans",
-    image: "https://via.placeholder.com/100x100.png?text=Jeans",
-    oldPrice: 39.99,
-    price: 27.99,
-    discount: 30,
+    id: 6,
+    title: "Set de utensilios",
+    image: "https://via.placeholder.com/100x100.png?text=Utensilios",
+    oldPrice: 29.99,
+    price: 19.99,
+    discount: 33,
   },
 ];
 
-const RopaScreen = () => (
+const HogarScreen = () => (
   <ScrollView style={styles.container}>
     <View style={styles.grid}>
-      {ropaProductos.map((p) => (
+      {hogarProductos.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
     </View>
@@ -41,4 +41,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RopaScreen;
+export default HogarScreen;
