@@ -1,13 +1,36 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import Header from "../componentes/Cabezal";
 import CategoryTabs from "../componentes/Categorias";
 import PromoBanner from "../componentes/promo";
 import AlertCard from "../componentes/Alertas";
 import ProductCard from "../componentes/TarjetaProducto";
 
-const dummyProducts = [
+
+// Tipos para navegación
+type RootStackParamList = {
+  Home: undefined;
+  Ropa: undefined;
+  Electrónica: undefined;
+  Hogar: undefined;
+};
+
+type ProductCategory = keyof Omit<RootStackParamList, 'Home'>;
+
+interface Product {
+  id: number;
+  title: string;
+  image: string;
+  oldPrice: number;
+  price: number;
+  discount: number;
+  category: ProductCategory;
+}
+
+
+const dummyProducts: Product[] = [
   {
     id: 1,
     title: "Camiseta",
@@ -45,9 +68,8 @@ const dummyProducts = [
     category: "Electrónica",
   },
 ];
-
 const HomeScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>(); // Temporalmente any para pruebas
 
   return (
     <ScrollView style={styles.container}>
@@ -60,13 +82,14 @@ const HomeScreen = () => {
           <ProductCard
             key={product.id}
             product={product}
-            onPress={() => navigation.navigate(product.category)} // esto debe coincidir con las pantallas que registraste
+            onPress={() => navigation.navigate(product.category)}
           />
         ))}
       </View>
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

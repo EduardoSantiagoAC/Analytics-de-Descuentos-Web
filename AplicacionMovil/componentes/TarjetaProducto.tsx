@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
-// interface de tarjeta de producto que muestra la imagen, título, precio y descuento
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+
 export interface Product {
   id: number;
   title: string;
@@ -8,23 +8,30 @@ export interface Product {
   oldPrice: number;
   price: number;
   discount: number;
+  category: 'Ropa' | 'Electrónica' | 'Hogar'; // Tipos específicos
 }
-//rops de producto
+
 interface ProductCardProps {
   product: Product;
+  onPress?: () => void;  // Añade esta línea para hacerla opcional
 }
-//componente de tarjeta de producto
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+
+const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={onPress}  // Añade esto
+      activeOpacity={0.7}  // Opcional: efecto visual al presionar
+    >
       <Text style={styles.discount}>{product.discount}%</Text>
       <Image source={{ uri: product.image }} style={styles.image} />
       <Text style={styles.title}>{product.title}</Text>
       <Text style={styles.oldPrice}>${product.oldPrice.toFixed(2)}</Text>
       <Text style={styles.price}>${product.price.toFixed(2)}</Text>
-    </View>
+    </TouchableOpacity>
   );
 };
+
 //estilos de la tarjeta de producto
 const styles = StyleSheet.create({
   card: {
