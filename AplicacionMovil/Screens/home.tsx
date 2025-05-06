@@ -1,5 +1,6 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import Header from "../componentes/Cabezal";
 import CategoryTabs from "../componentes/Categorias";
 import PromoBanner from "../componentes/promo";
@@ -14,6 +15,7 @@ const dummyProducts = [
     oldPrice: 9.99,
     price: 6.99,
     discount: 30,
+    category: "Ropa",
   },
   {
     id: 2,
@@ -22,6 +24,7 @@ const dummyProducts = [
     oldPrice: 59.99,
     price: 44.99,
     discount: 25,
+    category: "Electrónica",
   },
   {
     id: 3,
@@ -30,6 +33,7 @@ const dummyProducts = [
     oldPrice: 24.99,
     price: 22.49,
     discount: 10,
+    category: "Hogar",
   },
   {
     id: 4,
@@ -38,10 +42,13 @@ const dummyProducts = [
     oldPrice: 799.99,
     price: 679.99,
     discount: 15,
+    category: "Electrónica",
   },
 ];
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
+
   return (
     <ScrollView style={styles.container}>
       <Header />
@@ -50,7 +57,11 @@ const HomeScreen = () => {
       <AlertCard />
       <View style={styles.productsWrapper}>
         {dummyProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            onPress={() => navigation.navigate(product.category)} // esto debe coincidir con las pantallas que registraste
+          />
         ))}
       </View>
     </ScrollView>
