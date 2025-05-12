@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
 const scraper = require('./Utils/Scraper.js');
+const scrapingDiario = require('./services/scrapingDiario');
 const Producto = require('./Models/Producto.js');
 
 
@@ -24,28 +25,16 @@ app.use((req, res, next) => {
 });
 
 
-cron.schedule('0 3 * * *', () => {
-  console.log('⏰ Ejecutando scraping programado...');
-  const scrapingTasks = [
-    scraper.scrapeAmazon('PlayStation 5'),
-    scraper.scrapeAmazon('Xbox Series X'),
-    scraper.scrapeAmazon('Nintendo Switch OLED'),
-    scraper.scrapeMercadoLibre('https://listado.mercadolibre.com.mx/consolas-videojuegos/playstation-5')
-  ];
+const scrapingDiario = require('./services/scrapingDiario');
 
-  Promise.allSettled(scrapingTasks)
-    .then(results => {
-      results.forEach((result, i) => {
-        if (result.status === 'rejected') {
-          console.error(`✖ Error en tarea ${i}:`, result.reason.message);
-        }
-      });
-      console.log('✅ Scraping completado');
-    });
+cron.schedule('0 3 * * *', async () => {
+  console.log('⏰ Ejecutando scraping programado a las 3:00 AM...');
+  await scrapingDiario();
 }, {
   timezone: "America/Mexico_City",
   scheduled: true
 });
+
 
 
 app.get('/', (req, res) => {
