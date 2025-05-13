@@ -58,6 +58,8 @@ async function scrapeAmazon(productoNombre) {
     console.error('❌ Error al hacer scraping de Amazon:', error.message);
     return [];
   } finally {
+    await page.screenshot({ path: `screenshot-${Date.now()}.png`, fullPage: true });
+
     await browser.close();
   }
 }
