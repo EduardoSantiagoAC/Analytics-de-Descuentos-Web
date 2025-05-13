@@ -1,7 +1,7 @@
 // runScrapingManual.js
 const mongoose = require('mongoose');
 require('dotenv').config();
-const scrapingDiario = require('./services/scrapingDiario');
+const scrapingDiario = require('..services/scrapingDiario.js');
 
 async function main() {
   try {
