@@ -29,34 +29,41 @@ async function scrapeAmazon(productoNombre) {
     await page.screenshot({ path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`, fullPage: true });
 
     const productos = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('.s-result-item')).map(item => {
-        const nombre = item.querySelector('h2 a span')?.textContent.trim();
-        const precioTexto = item.querySelector('.a-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
-        const precioOriginalTexto = item.querySelector('.a-price[data-a-strike="true"] .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
-        const url = item.querySelector('h2 a')?.href.split('?')[0];
+  const items = document.querySelectorAll('[data-component-type="s-search-result"]');
 
-        const precio = precioTexto ? parseFloat(precioTexto) : null;
-        const precioOriginal = precioOriginalTexto ? parseFloat(precioOriginalTexto) : null;
+  return Array.from(items).map(item => {
+    try {
+      const nombre = item.querySelector('h2 a span')?.textContent.trim();
+      const precioTexto = item.querySelector('.a-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
+      const precioOriginalTexto = item.querySelector('.a-price.a-text-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
+      const url = item.querySelector('h2 a')?.href.split('?')[0];
 
-        if (!nombre || !precio) return null;
+      const precio = precioTexto ? parseFloat(precioTexto) : null;
+      const precioOriginal = precioOriginalTexto ? parseFloat(precioOriginalTexto) : null;
 
-        const porcentajeDescuento = precioOriginal && precioOriginal > precio
-          ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
-          : 0;
+      if (!nombre || !precio) return null;
 
-        return {
-          nombre,
-          precio,
-          precioOriginal: precioOriginal || precio,
-          urlProducto: url,
-          tienda: 'Amazon',
-          estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
-          porcentajeDescuento,
-          esOferta: porcentajeDescuento > 10,
-          fechaScraping: new Date()
-        };
-      }).filter(Boolean);
-    });
+      const porcentajeDescuento = precioOriginal && precioOriginal > precio
+        ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
+        : 0;
+
+      return {
+        nombre,
+        precio,
+        precioOriginal: precioOriginal || precio,
+        urlProducto: url,
+        tienda: 'Amazon',
+        estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
+        porcentajeDescuento,
+        esOferta: porcentajeDescuento > 10,
+        fechaScraping: new Date()
+      };
+    } catch (e) {
+      return null;
+    }
+  }).filter(Boolean);
+});
+
 
     return productos;
   } catch (error) {
