@@ -1,6 +1,6 @@
 // services/scrapingDiario.js
-const scrapeAmazon = require('./scraperAmazonService');
-const guardarProductos = require('./guardarProductosService');
+const scrapeAmazon = require('./scraperAmazonService.js');
+const guardarProductos = require('./guardarProductosService.js');
 
 const terminosPopulares = [
   "Nintendo Switch",
