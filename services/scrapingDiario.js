@@ -1,5 +1,8 @@
 // services/scrapingDiario.js
-const scrapeAmazon = require('./scraperAmazonService.js');
+
+const scrapeAmazon = require('./scraperAmazonService');
+console.log('📦 Tipo de scrapeAmazon:', typeof scrapeAmazon);
+
 const guardarProductos = require('./guardarProductosService.js');
 
 const terminosPopulares = [
