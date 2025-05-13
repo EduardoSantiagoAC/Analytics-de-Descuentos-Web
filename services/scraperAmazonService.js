@@ -11,7 +11,7 @@ async function scrapeAmazon(productoNombre) {
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
-  let page; // ✅ Declarar aquí para usar en catch/finally
+  let page;
 
   try {
     page = await browser.newPage();
@@ -23,47 +23,46 @@ async function scrapeAmazon(productoNombre) {
       timeout: 30000
     });
 
-    await page.waitForSelector('.s-result-item', { timeout: 15000 });
+    await page.waitForSelector('[data-component-type="s-search-result"]', { timeout: 15000 });
 
-    // ✅ Screenshot opcional para debug
+    // Screenshot para depuración
     await page.screenshot({ path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`, fullPage: true });
 
     const productos = await page.evaluate(() => {
-  const items = document.querySelectorAll('[data-component-type="s-search-result"]');
+      const items = document.querySelectorAll('[data-component-type="s-search-result"]');
 
-  return Array.from(items).map(item => {
-    try {
-      const nombre = item.querySelector('h2 a span')?.textContent.trim();
-      const precioTexto = item.querySelector('.a-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
-      const precioOriginalTexto = item.querySelector('.a-price.a-text-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
-      const url = item.querySelector('h2 a')?.href.split('?')[0];
+      return Array.from(items).map(item => {
+        try {
+          const nombre = item.querySelector('h2 a span')?.textContent.trim();
+          const precioTexto = item.querySelector('.a-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
+          const precioOriginalTexto = item.querySelector('.a-price.a-text-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
+          const url = item.querySelector('h2 a')?.href.split('?')[0];
 
-      const precio = precioTexto ? parseFloat(precioTexto) : null;
-      const precioOriginal = precioOriginalTexto ? parseFloat(precioOriginalTexto) : null;
+          const precio = precioTexto ? parseFloat(precioTexto) : null;
+          const precioOriginal = precioOriginalTexto ? parseFloat(precioOriginalTexto) : null;
 
-      if (!nombre || !precio) return null;
+          if (!nombre || !precio) return null;
 
-      const porcentajeDescuento = precioOriginal && precioOriginal > precio
-        ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
-        : 0;
+          const porcentajeDescuento = precioOriginal && precioOriginal > precio
+            ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
+            : 0;
 
-      return {
-        nombre,
-        precio,
-        precioOriginal: precioOriginal || precio,
-        urlProducto: url,
-        tienda: 'Amazon',
-        estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
-        porcentajeDescuento,
-        esOferta: porcentajeDescuento > 10,
-        fechaScraping: new Date()
-      };
-    } catch (e) {
-      return null;
-    }
-  }).filter(Boolean);
-});
-
+          return {
+            nombre,
+            precio,
+            precioOriginal: precioOriginal || precio,
+            urlProducto: url,
+            tienda: 'Amazon',
+            estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
+            porcentajeDescuento,
+            esOferta: porcentajeDescuento > 10,
+            fechaScraping: new Date()
+          };
+        } catch (e) {
+          return null;
+        }
+      }).filter(Boolean);
+    });
 
     return productos;
   } catch (error) {
