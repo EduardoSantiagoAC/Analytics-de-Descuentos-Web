@@ -11,8 +11,10 @@ async function scrapeAmazon(productoNombre) {
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
+  let page; // ✅ Declarar aquí para usar en catch/finally
+
   try {
-    const page = await browser.newPage();
+    page = await browser.newPage();
     await page.setUserAgent(USER_AGENT);
     await page.setViewport({ width: 1366, height: 768 });
 
@@ -22,6 +24,9 @@ async function scrapeAmazon(productoNombre) {
     });
 
     await page.waitForSelector('.s-result-item', { timeout: 15000 });
+
+    // ✅ Screenshot opcional para debug
+    await page.screenshot({ path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`, fullPage: true });
 
     const productos = await page.evaluate(() => {
       return Array.from(document.querySelectorAll('.s-result-item')).map(item => {
@@ -55,13 +60,18 @@ async function scrapeAmazon(productoNombre) {
 
     return productos;
   } catch (error) {
-    console.error('❌ Error al hacer scraping de Amazon:', error.message);
+    console.error(`❌ Error al hacer scraping de "${productoNombre}":`, error.message);
+
+    if (page) {
+      await page.screenshot({ path: `error-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png` });
+    }
+
     return [];
   } finally {
-    await page.screenshot({ path: `screenshot-${Date.now()}.png`, fullPage: true });
-
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 }
 
-module.exports = scrapeAmazon; // pipi 
+module.exports = scrapeAmazon;
