@@ -1,0 +1,3 @@
+Falta crear una navegacion funcional en el tab de home
+Falta conectar la api con el front end para que salgan los precios
+ademas falta crear todo que redicionara a las otras paginas/pagos
