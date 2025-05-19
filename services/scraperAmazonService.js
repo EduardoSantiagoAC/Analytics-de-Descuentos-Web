@@ -5,7 +5,6 @@ puppeteer.use(StealthPlugin());
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
 
-
 const proxyList = [
   '45.174.76.85:999',
   '103.178.43.182:8181',
@@ -13,16 +12,13 @@ const proxyList = [
   '179.1.85.10:8080'
 ];
 
-function getRandomProxy() {
-  const index = Math.floor(Math.random() * proxyList.length);
-  return proxyList[index];
+function getRandomProxy(exclude = []) {
+  const available = proxyList.filter(p => !exclude.includes(p));
+  return available.length ? available[Math.floor(Math.random() * available.length)] : null;
 }
 
-async function scrapeAmazon(productoNombre) {
-  const proxy = getRandomProxy();
-  console.log(`🧪 Usando proxy: ${proxy}`);
-
-  const browser = await puppeteer.launch({
+async function launchBrowserWithProxy(proxy) {
+  return puppeteer.launch({
     headless: true,
     args: [
       '--no-sandbox',
@@ -30,10 +26,25 @@ async function scrapeAmazon(productoNombre) {
       `--proxy-server=http://${proxy}`
     ]
   });
+}
 
+async function scrapeAmazon(productoNombre, intentos = 0, usados = []) {
+  const MAX_RETRIES = 3;
+  const proxy = getRandomProxy(usados);
+
+  if (!proxy) {
+    console.error('❌ No quedan proxies disponibles para intentar');
+    return [];
+  }
+
+  console.log(`🔁 Intento ${intentos + 1} - Usando proxy: ${proxy}`);
+  usados.push(proxy);
+
+  let browser;
   let page;
 
   try {
+    browser = await launchBrowserWithProxy(proxy);
     page = await browser.newPage();
     await page.setUserAgent(USER_AGENT);
     await page.setViewport({ width: 1366, height: 768 });
@@ -45,9 +56,7 @@ async function scrapeAmazon(productoNombre) {
 
     const html = await page.content();
     if (html.includes('Enter the characters you see below') || html.includes('automated access')) {
-      await page.screenshot({
-        path: `captcha-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`
-      });
+      await page.screenshot({ path: `captcha-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png` });
       throw new Error('⚠️ Amazon mostró un CAPTCHA o bloqueo de bot');
     }
 
@@ -111,14 +120,19 @@ async function scrapeAmazon(productoNombre) {
 
     return productos;
   } catch (error) {
-    console.error(`❌ Error al hacer scraping de "${productoNombre}":`, error.message);
+    console.error(`❌ Error con proxy ${proxy}:`, error.message);
 
     if (page && typeof page.screenshot === 'function') {
-      await page.screenshot({
-        path: `error-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`
-      });
+      await page.screenshot({ path: `error-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png` });
     }
 
+    if (browser) await browser.close();
+
+    if (intentos + 1 < MAX_RETRIES) {
+      return scrapeAmazon(productoNombre, intentos + 1, usados);
+    }
+
+    console.error(`❌ Todos los intentos fallaron para: ${productoNombre}`);
     return [];
   } finally {
     if (browser) await browser.close();
