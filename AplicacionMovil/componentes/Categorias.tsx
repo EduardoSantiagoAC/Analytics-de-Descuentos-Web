@@ -1,39 +1,68 @@
+// component/Categorias.tsx
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { TouchableOpacity, Text, View, StyleSheet } from "react-native";
 
-const categories = ["Destacados", "Ropa", "Electrónica", "Hogar"];
+type CategoryTabsProps = {
+  onCategoryChange: (category: string) => void;
+  activeCategory: string;
+};
 
-const CategoryTabs = () => {
+const categories = [
+  { id: "1", name: "Todos", key: "Home" },
+  { id: "2", name: "Ropa", key: "Ropa" },
+  { id: "3", name: "Electrónica", key: "Electrónica" },
+  { id: "4", name: "Hogar", key: "Hogar" },
+];
+
+const CategoryTabs: React.FC<CategoryTabsProps> = ({
+  onCategoryChange,
+  activeCategory,
+}) => {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroll}>
-      {categories.map((cat, idx) => (
-        <TouchableOpacity key={idx} style={styles.tab}>
-          <Text style={[styles.text, idx === 0 && styles.active]}>{cat}</Text>
+    <View style={styles.container}>
+      {categories.map((category) => (
+        <TouchableOpacity
+          key={category.id}
+          style={[
+            styles.tab,
+            activeCategory === category.key && styles.activeTab,
+          ]}
+          onPress={() => onCategoryChange(category.key)}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeCategory === category.key && styles.activeText,
+            ]}
+          >
+            {category.name}
+          </Text>
         </TouchableOpacity>
       ))}
-    </ScrollView>
+    </View>
   );
 };
-//estilos
+
 const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: 10,
-    marginBottom: 10,
+  container: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 10,
+    backgroundColor: "#fff",
   },
   tab: {
-    marginRight: 20,
+    padding: 10,
+    borderRadius: 20,
   },
-  text: {
-    fontSize: 16,
-    color: "gray",
+  activeTab: {
+    backgroundColor: "#6200ee",
   },
-  active: {
-    color: "black",
-    fontWeight: "bold",
-    borderBottomWidth: 2,
-    borderBottomColor: "black",
+  tabText: {
+    color: "#000",
+  },
+  activeText: {
+    color: "#fff",
   },
 });
 
 export default CategoryTabs;
-
