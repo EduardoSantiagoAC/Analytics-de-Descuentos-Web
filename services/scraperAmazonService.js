@@ -6,10 +6,17 @@ puppeteer.use(StealthPlugin());
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
 
 async function scrapeAmazon(productoNombre) {
+  const proxy = '186.121.235.66:8080'; 
+
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    `--proxy-server=http://${proxy}`
+    ]
   });
+
 
   let page;
 
