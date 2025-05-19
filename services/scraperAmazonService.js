@@ -21,7 +21,7 @@ async function scrapeAmazon(productoNombre) {
     await page.goto(`https://www.amazon.com.mx/s?k=${encodeURIComponent(productoNombre)}`, {
       waitUntil: 'domcontentloaded',
       timeout: 30000
-    });
+    }); //ee
 
     const html = await page.content();
     if (html.includes("Enter the characters you see below") || html.includes("To discuss automated access")) {
