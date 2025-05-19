@@ -31,17 +31,27 @@ async function scrapeAmazon(productoNombre) {
     const productos = await page.evaluate(() => {
       const items = document.querySelectorAll('[data-component-type="s-search-result"]');
 
-      return Array.from(items).map(item => {
+      let errores = 0;
+
+      const resultados = Array.from(items).map(item => {
         try {
-          const nombre = item.querySelector('h2 a span')?.textContent.trim();
+          const nombre =
+            item.querySelector('h2 a span')?.textContent.trim() ||
+            item.querySelector('h2 a')?.textContent.trim() ||
+            item.querySelector('.a-size-medium')?.textContent.trim();
+
           const precioTexto = item.querySelector('.a-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
-          const precioOriginalTexto = item.querySelector('.a-price.a-text-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
+          const precioOriginalTexto = item.querySelector('.a-text-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
+
           const url = item.querySelector('h2 a')?.href.split('?')[0];
 
           const precio = precioTexto ? parseFloat(precioTexto) : null;
           const precioOriginal = precioOriginalTexto ? parseFloat(precioOriginalTexto) : null;
 
-          if (!nombre || !precio) return null;
+          if (!nombre || !precio) {
+            errores++;
+            return null;
+          }
 
           const porcentajeDescuento = precioOriginal && precioOriginal > precio
             ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
@@ -59,9 +69,13 @@ async function scrapeAmazon(productoNombre) {
             fechaScraping: new Date()
           };
         } catch (e) {
+          errores++;
           return null;
         }
       }).filter(Boolean);
+
+      console.log(`🧪 Productos descartados por error: ${errores}`);
+      return resultados;
     });
 
     return productos;
