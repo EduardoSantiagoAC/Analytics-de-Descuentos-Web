@@ -23,7 +23,14 @@ async function scrapeAmazon(productoNombre) {
       timeout: 30000
     });
 
-    await page.waitForSelector('[data-component-type="s-search-result"]', { timeout: 15000 });
+    const html = await page.content();
+    if (html.includes("Enter the characters you see below") || html.includes("To discuss automated access")) {
+      await page.screenshot({ path: `captcha-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png` });
+      throw new Error("⚠️ Amazon mostró un CAPTCHA o bloqueo de bot");
+    }
+
+
+    await page.waitForSelector('[data-component-type="s-search-result"]', { timeout: 30000 });
 
     // Screenshot para depuración
     await page.screenshot({ path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`, fullPage: true });
