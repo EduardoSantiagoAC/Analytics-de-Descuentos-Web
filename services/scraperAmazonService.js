@@ -8,8 +8,7 @@ const USER_AGENT =
 const proxyList = [
   '45.174.76.85:999',
   '103.178.43.182:8181',
-  '159.192.97.165:8080',
-  '179.1.85.10:8080'
+  '159.192.97.165:8080'
 ];
 
 function getRandomProxy(exclude = []) {
@@ -17,34 +16,30 @@ function getRandomProxy(exclude = []) {
   return available.length ? available[Math.floor(Math.random() * available.length)] : null;
 }
 
-async function launchBrowserWithProxy(proxy) {
+async function launchBrowser(proxy = null) {
+  const args = ['--no-sandbox', '--disable-setuid-sandbox'];
+  if (proxy) args.push(`--proxy-server=http://${proxy}`);
+
   return puppeteer.launch({
     headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      `--proxy-server=http://${proxy}`
-    ]
+    args
   });
 }
 
-async function scrapeAmazon(productoNombre, intentos = 0, usados = []) {
+async function scrapeAmazon(productoNombre, intento = 0, usados = []) {
   const MAX_RETRIES = 3;
   const proxy = getRandomProxy(usados);
 
-  if (!proxy) {
-    console.error('❌ No quedan proxies disponibles para intentar');
-    return [];
-  }
+  const usarProxy = proxy !== null;
+  if (usarProxy) usados.push(proxy);
 
-  console.log(`🔁 Intento ${intentos + 1} - Usando proxy: ${proxy}`);
-  usados.push(proxy);
+  console.log(`🔁 Intento ${intento + 1} - Usando ${usarProxy ? `proxy ${proxy}` : 'modo directo (sin proxy)'}`);
 
   let browser;
   let page;
 
   try {
-    browser = await launchBrowserWithProxy(proxy);
+    browser = await launchBrowser(proxy);
     page = await browser.newPage();
     await page.setUserAgent(USER_AGENT);
     await page.setViewport({ width: 1366, height: 768 });
@@ -60,14 +55,9 @@ async function scrapeAmazon(productoNombre, intentos = 0, usados = []) {
       throw new Error('⚠️ Amazon mostró un CAPTCHA o bloqueo de bot');
     }
 
-    await page.waitForSelector('[data-component-type="s-search-result"]', {
-      timeout: 30000
-    });
+    await page.waitForSelector('[data-component-type="s-search-result"]', { timeout: 30000 });
 
-    await page.screenshot({
-      path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`,
-      fullPage: true
-    });
+    await page.screenshot({ path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`, fullPage: true });
 
     const productos = await page.evaluate(() => {
       const items = document.querySelectorAll('[data-component-type="s-search-result"]');
@@ -120,7 +110,7 @@ async function scrapeAmazon(productoNombre, intentos = 0, usados = []) {
 
     return productos;
   } catch (error) {
-    console.error(`❌ Error con proxy ${proxy}:`, error.message);
+    console.error(`❌ Error con ${usarProxy ? `proxy ${proxy}` : 'modo directo'}:`, error.message);
 
     if (page && typeof page.screenshot === 'function') {
       await page.screenshot({ path: `error-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png` });
@@ -128,11 +118,17 @@ async function scrapeAmazon(productoNombre, intentos = 0, usados = []) {
 
     if (browser) await browser.close();
 
-    if (intentos + 1 < MAX_RETRIES) {
-      return scrapeAmazon(productoNombre, intentos + 1, usados);
+    if (usarProxy && intento + 1 < MAX_RETRIES) {
+      return scrapeAmazon(productoNombre, intento + 1, usados);
     }
 
-    console.error(`❌ Todos los intentos fallaron para: ${productoNombre}`);
+    // Reintento final sin proxy si todos fallan
+    if (usarProxy && intento + 1 === MAX_RETRIES) {
+      console.warn('🔁 Todos los proxies fallaron. Probando sin proxy...');
+      return scrapeAmazon(productoNombre, 0, []);
+    }
+
+    console.error(`❌ No se pudo hacer scraping de: ${productoNombre}`);
     return [];
   } finally {
     if (browser) await browser.close();
