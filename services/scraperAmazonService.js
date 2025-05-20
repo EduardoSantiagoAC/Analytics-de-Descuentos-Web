@@ -1,13 +1,14 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const Producto = require('../Models/Producto');
+
 puppeteer.use(StealthPlugin());
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
 
 async function scrapeAmazon(productoNombre) {
   const browser = await puppeteer.launch({
-    headless: false, // Abre el navegador visible para ver el comportamiento
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
@@ -18,37 +19,25 @@ async function scrapeAmazon(productoNombre) {
     await page.setUserAgent(USER_AGENT);
     await page.setViewport({ width: 1366, height: 768 });
 
-    const url = `https://www.amazon.com.mx/s?k=${encodeURIComponent(productoNombre)}`;
-    console.log(`🌐 Navegando a: ${url}`);
-    await page.goto(url, {
+    const urlBusqueda = `https://www.amazon.com.mx/s?k=${encodeURIComponent(productoNombre)}`;
+    console.log(`🌐 Navegando a: ${urlBusqueda}`);
+    await page.goto(urlBusqueda, {
       waitUntil: 'domcontentloaded',
       timeout: 40000
     });
 
-    const html = await page.content();
-    if (html.includes('Enter the characters you see below') || html.includes('automated access')) {
-      await page.screenshot({ path: `captcha-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png` });
-      throw new Error('⚠️ Amazon mostró un CAPTCHA o bloqueo de bot');
-    }
+    // Tomar screenshot para verificar
+    await page.screenshot({ path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`, fullPage: true });
 
+    // Esperar por resultados
     await page.waitForSelector('[data-component-type="s-search-result"]', { timeout: 30000 });
-
-    await page.screenshot({
-      path: `screenshot-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png`,
-      fullPage: true
-    });
 
     const productos = await page.evaluate(() => {
       const items = document.querySelectorAll('[data-component-type="s-search-result"]');
-      let errores = 0;
 
-      const resultados = Array.from(items).map(item => {
+      return Array.from(items).map(item => {
         try {
-          const nombre =
-            item.querySelector('h2 a span')?.textContent.trim() ||
-            item.querySelector('h2 a')?.textContent.trim() ||
-            item.querySelector('.a-size-medium')?.textContent.trim();
-
+          const nombre = item.querySelector('h2 a span')?.textContent.trim();
           const precioTexto = item.querySelector('.a-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
           const precioOriginalTexto = item.querySelector('.a-text-price .a-offscreen')?.textContent.replace(/[^0-9.]/g, '');
           const url = item.querySelector('h2 a')?.href.split('?')[0];
@@ -56,15 +45,11 @@ async function scrapeAmazon(productoNombre) {
           const precio = precioTexto ? parseFloat(precioTexto) : null;
           const precioOriginal = precioOriginalTexto ? parseFloat(precioOriginalTexto) : null;
 
-          if (!nombre || !precio) {
-            errores++;
-            return null;
-          }
+          if (!nombre || !precio) return null;
 
-          const porcentajeDescuento =
-            precioOriginal && precioOriginal > precio
-              ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
-              : 0;
+          const porcentajeDescuento = precioOriginal && precioOriginal > precio
+            ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
+            : 0;
 
           return {
             nombre,
@@ -78,27 +63,37 @@ async function scrapeAmazon(productoNombre) {
             fechaScraping: new Date()
           };
         } catch {
-          errores++;
           return null;
         }
       }).filter(Boolean);
-
-      console.log(`🧪 Productos descartados por error: ${errores}`);
-      return resultados;
     });
+
+    console.log(`📦 Productos encontrados: ${productos.length}`);
+
+    if (productos.length > 0) {
+      const operaciones = productos.map(item => ({
+        updateOne: {
+          filter: { urlProducto: item.urlProducto },
+          update: {
+            $set: item,
+            $push: {
+              historicoPrecios: {
+                precio: item.precio,
+                fecha: new Date()
+              }
+            }
+          },
+          upsert: true
+        }
+      }));
+
+      await Producto.bulkWrite(operaciones);
+      console.log(`✅ Guardados ${productos.length} productos en la base de datos.`);
+    }
 
     return productos;
   } catch (error) {
     console.error(`❌ Error al hacer scraping de "${productoNombre}":`, error.message);
-
-    try {
-      if (page && typeof page.screenshot === 'function' && !page.isClosed()) {
-        await page.screenshot({ path: `error-${productoNombre.replace(/\s+/g, '_')}-${Date.now()}.png` });
-      }
-    } catch (err) {
-      console.warn('⚠️ No se pudo capturar screenshot de error:', err.message);
-    }
-
     return [];
   } finally {
     if (browser) await browser.close();
