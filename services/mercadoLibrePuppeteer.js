@@ -8,6 +8,10 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   });
 
   const page = await browser.newPage();
+
+  // Loguear consola de la página para debug
+  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
   await page.setViewport({ width: 1366, height: 768 });
 
@@ -16,9 +20,15 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 10000 });
+    await page.waitForTimeout(2000); // Espera extra para renderizado
+
+    // Captura de pantalla para revisar
+    await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
 
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item');
+      console.log('Items encontrados:', items.length);
+
       const resultado = [];
 
       for (let item of items) {
@@ -44,11 +54,11 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
               fechaScraping: new Date().toISOString()
             });
           }
-        } catch (_) {
+        } catch (err) {
+          console.log('Error al parsear producto:', err);
           continue;
         }
       }
-
       return resultado;
     }, maxResults);
 
