@@ -21,6 +21,7 @@
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
+    "nodemon": "^3.1.10",
     "openssl": "^2.0.0"
   }
 }
