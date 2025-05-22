@@ -20,7 +20,8 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 10000 });
-    await page.waitForTimeout(2000); // Espera extra para renderizado
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
 
     // Captura de pantalla para revisar
     await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
