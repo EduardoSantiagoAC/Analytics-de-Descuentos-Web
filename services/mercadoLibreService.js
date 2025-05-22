@@ -3,7 +3,13 @@ const axios = require('axios');
 async function buscarEnMercadoLibre(query, limit = 20) {
   try {
     const url = `https://api.mercadolibre.com/sites/MLM/search?q=${encodeURIComponent(query)}&limit=${limit}`;
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, {
+     headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json'
+      }
+    });
+
 
     const resultados = data.results.map(item => {
       const porcentajeDescuento = item.original_price && item.original_price > item.price
