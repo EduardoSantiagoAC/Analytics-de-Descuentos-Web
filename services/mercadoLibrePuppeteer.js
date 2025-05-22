@@ -4,7 +4,7 @@ const fs = require('fs');
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
   const browser = await puppeteer.launch({
-    headless: false, // Puedes cambiar a true si no quieres ver el navegador
+    headless: false, // Cambia a true si no quieres abrir el navegador
     args: ['--no-sandbox']
   });
 
@@ -20,16 +20,11 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 10000 });
-
-    // Espera adicional por si hay contenido que carga lento
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Guardar HTML para inspección
     const html = await page.content();
     fs.writeFileSync('ml_debug.html', html);
     console.log('🧪 HTML guardado como "ml_debug.html". Ábrelo en tu navegador para revisar.');
-
-    // Captura de pantalla completa
     await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
 
     const productos = await page.evaluate((max) => {
@@ -38,15 +33,20 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
       console.log('📦 Total de elementos detectados:', items.length);
 
-      for (let item of items) {
-        if (resultado.length >= max) break;
+      for (let i = 0; i < items.length && resultado.length < max; i++) {
+        const item = items[i];
 
         try {
-          const nombre = item.querySelector('h2.ui-search-item__title')?.innerText.trim();
-          const urlProducto = item.querySelector('a.ui-search-link')?.href?.split('?')[0] || '';
-          const entero = item.querySelector('.andes-money-amount__fraction')?.innerText.replace(/[^\d]/g, '');
-          const decimal = item.querySelector('.andes-money-amount__cents')?.innerText.replace(/[^\d]/g, '') || '00';
-          const precio = parseFloat(`${entero}.${decimal}`);
+          const nombre = item.querySelector('h2.ui-search-item__title')?.innerText?.trim() || null;
+          const urlProducto = item.querySelector('a.ui-search-link')?.href?.split('?')[0] || null;
+          const entero = item.querySelector('.andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '') || null;
+          const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
+          const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
+
+          console.log(`🕵️‍♂️ Producto ${i + 1}:`);
+          console.log(`- nombre: ${nombre}`);
+          console.log(`- urlProducto: ${urlProducto}`);
+          console.log(`- precio: ${precio}`);
 
           if (nombre && urlProducto && !isNaN(precio)) {
             resultado.push({
@@ -62,6 +62,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
             });
           }
         } catch (err) {
+          console.log(`⚠️ Error procesando producto ${i + 1}: ${err.message}`);
           continue;
         }
       }
