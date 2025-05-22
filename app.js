@@ -6,7 +6,7 @@ const mercadoLibreRoutes = require('./Routes/mercadoLibre');
 app.use(express.json());
 
 // Conectar la ruta de MercadoLibre
-app.use('/mercado-libre', mercadoLibreRoutes);
+app.use('/mercado-libre', mercadoLibre);
 
 const PORT = process.env.PORT || 3000;
 
