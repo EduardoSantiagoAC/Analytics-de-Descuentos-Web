@@ -15,22 +15,29 @@ async function scrapeMercadoLibre(query, limit = 20) {
     const $ = cheerio.load(html);
     const productos = [];
 
-    $('.ui-search-result, .andes-card').each((i, el) => {
+    $('.ui-search-layout__item').each((i, el) => {
       if (productos.length >= limit) return false;
 
       try {
         const nombre = $(el).find('.ui-search-item__title').text().trim();
+
         const urlProducto = $(el).find('a').attr('href')?.split('?')[0];
-        const precioTexto = $(el).find('.price-tag-fraction').first().text().replace(/[^\d]/g, '');
+
+        const precioEntero = $(el).find('.price-tag-fraction').first().text().replace(/[^\d]/g, '');
+        const precioDecimal = $(el).find('.price-tag-cents').first().text().replace(/[^\d]/g, '');
+        const precioTexto = `${precioEntero}.${precioDecimal || '00'}`;
         const precio = parseFloat(precioTexto);
-        const originalTexto = $(el).find('.price-tag__subprice .price-tag-fraction').text().replace(/[^\d]/g, '');
-        const precioOriginal = originalTexto ? parseFloat(originalTexto) : precio;
+
+        const originalEntero = $(el).find('.price-tag__subprice .price-tag-fraction').text().replace(/[^\d]/g, '');
+        const originalDecimal = $(el).find('.price-tag__subprice .price-tag-cents').text().replace(/[^\d]/g, '');
+        const originalTexto = `${originalEntero}.${originalDecimal || '00'}`;
+        const precioOriginal = originalEntero ? parseFloat(originalTexto) : precio;
 
         const porcentajeDescuento = precioOriginal > precio
           ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
           : 0;
 
-        if (nombre && precio) {
+        if (nombre && precio && urlProducto) {
           productos.push({
             nombre,
             precio,
@@ -44,7 +51,7 @@ async function scrapeMercadoLibre(query, limit = 20) {
           });
         }
       } catch (e) {
-        console.warn(`❌ Error en item [${i}]:`, e.message);
+        console.warn(`❌ Error al procesar un item: ${e.message}`);
       }
     });
 
