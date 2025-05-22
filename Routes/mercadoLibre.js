@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const scrapeML = require('../services/scrapeMercadoLibrePuppeteer');
+const scrapeML = require('../services/mercadoLibrePuppeteer');
 
 router.get('/buscar', async (req, res) => {
   const { q, max } = req.query;
