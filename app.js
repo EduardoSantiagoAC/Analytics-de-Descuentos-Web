@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 
-const mercadoLibreRoutes = require('../routes/mercadoLibre');
+const mercadoLibreRoutes = require('./Routes/mercadoLibre');
 
 app.use(express.json());
 
