@@ -13,7 +13,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
   try {
     console.log(`🌐 Abriendo: ${url}`);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 10000 });
 
