@@ -1,31 +1,34 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-async function scrapeMercadoLibre(producto, maxResultados = 15) {
-  const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(producto)}`;
+async function scrapeMercadoLibre(query, maxResultados = 15) {
+  const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
 
   try {
     const { data: html } = await axios.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
+        'Accept-Language': 'es-MX,es;q=0.9'
       },
     });
 
     const $ = cheerio.load(html);
-    const resultados = [];
+    const productos = [];
 
-    $('[data-testid="list-item"]').each((i, el) => {
-      if (i >= maxResultados) return false;
+    $('.ui-search-layout__item').each((i, el) => {
+      if (productos.length >= maxResultados) return false;
 
-      const nombre = $(el).find('h2').text().trim();
-      const precioTexto = $(el).find('span.andes-money-amount__fraction').first().text().replace(/[^\d]/g, '');
-      const urlProducto = $(el).find('a').attr('href')?.split('#')[0];
+      const nombre = $(el).find('.ui-search-item__title').text().trim();
+      const urlProducto = $(el).find('a').attr('href')?.split('?')[0];
 
-      const precio = precioTexto ? parseFloat(precioTexto) : null;
+      const precioEntero = $(el).find('.price-tag-fraction').first().text().replace(/[^\d]/g, '');
+      const precioDecimal = $(el).find('.price-tag-cents').first().text().replace(/[^\d]/g, '');
+      const precioTexto = `${precioEntero}.${precioDecimal || '00'}`;
+      const precio = parseFloat(precioTexto);
 
       if (!nombre || !precio || !urlProducto) return;
 
-      resultados.push({
+      productos.push({
         nombre,
         precio,
         precioOriginal: precio,
@@ -38,7 +41,8 @@ async function scrapeMercadoLibre(producto, maxResultados = 15) {
       });
     });
 
-    return resultados;
+    console.log(`🧪 Productos extraídos: ${productos.length}`);
+    return productos;
   } catch (error) {
     console.error(`❌ Error al hacer scraping de MercadoLibre: ${error.message}`);
     return [];
