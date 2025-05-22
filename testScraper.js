@@ -7,7 +7,7 @@ async function testScraper() {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Conectado a MongoDB');
 
-    const termino = 'Nintendo Switch'; // Puedes cambiar el término aquí
+    const termino = 'Nintendo Switch'; /// Producto a probar dentro de la lista
     console.log(`🔍 Probando búsqueda de: "${termino}"`);
 
     const productos = await scrapeAmazon(termino);
