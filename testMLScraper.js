@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const scrapeMercadoLibre = require('./services/mercadoLibreScraper');
+
 const scrapeMercadoLibre = require('./services/mercadoLibrePuppeteer');
 const Producto = require('./Models/Producto');
 const axios = require('axios');
