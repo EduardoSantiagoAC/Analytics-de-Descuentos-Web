@@ -1,63 +1,46 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-async function scrapeMercadoLibre(query, limit = 20) {
+async function scrapeMercadoLibre(producto, maxResultados = 15) {
+  const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(producto)}`;
+
   try {
-    const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
     const { data: html } = await axios.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0',
-        'Accept-Language': 'es-MX,es;q=0.9'
       },
-      timeout: 15000
     });
 
     const $ = cheerio.load(html);
-    const productos = [];
+    const resultados = [];
 
-    $('.ui-search-layout__item').each((i, el) => {
-      if (productos.length >= limit) return false;
+    $('[data-testid="list-item"]').each((i, el) => {
+      if (i >= maxResultados) return false;
 
-      try {
-        const nombre = $(el).find('.ui-search-item__title').text().trim();
+      const nombre = $(el).find('h2').text().trim();
+      const precioTexto = $(el).find('span.andes-money-amount__fraction').first().text().replace(/[^\d]/g, '');
+      const urlProducto = $(el).find('a').attr('href')?.split('#')[0];
 
-        const urlProducto = $(el).find('a').attr('href')?.split('?')[0];
+      const precio = precioTexto ? parseFloat(precioTexto) : null;
 
-        const precioEntero = $(el).find('.price-tag-fraction').first().text().replace(/[^\d]/g, '');
-        const precioDecimal = $(el).find('.price-tag-cents').first().text().replace(/[^\d]/g, '');
-        const precioTexto = `${precioEntero}.${precioDecimal || '00'}`;
-        const precio = parseFloat(precioTexto);
+      if (!nombre || !precio || !urlProducto) return;
 
-        const originalEntero = $(el).find('.price-tag__subprice .price-tag-fraction').text().replace(/[^\d]/g, '');
-        const originalDecimal = $(el).find('.price-tag__subprice .price-tag-cents').text().replace(/[^\d]/g, '');
-        const originalTexto = `${originalEntero}.${originalDecimal || '00'}`;
-        const precioOriginal = originalEntero ? parseFloat(originalTexto) : precio;
-
-        const porcentajeDescuento = precioOriginal > precio
-          ? Math.round(((precioOriginal - precio) / precioOriginal) * 100)
-          : 0;
-
-        if (nombre && precio && urlProducto) {
-          productos.push({
-            nombre,
-            precio,
-            precioOriginal,
-            urlProducto,
-            tienda: 'MercadoLibre',
-            estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
-            porcentajeDescuento,
-            esOferta: porcentajeDescuento > 10,
-            fechaScraping: new Date()
-          });
-        }
-      } catch (e) {
-        console.warn(`❌ Error al procesar un item: ${e.message}`);
-      }
+      resultados.push({
+        nombre,
+        precio,
+        precioOriginal: precio,
+        urlProducto,
+        tienda: 'MercadoLibre',
+        estadoDescuento: 'Normal',
+        porcentajeDescuento: 0,
+        esOferta: false,
+        fechaScraping: new Date(),
+      });
     });
 
-    return productos;
+    return resultados;
   } catch (error) {
-    console.error(`❌ Error al scrapear MercadoLibre para "${query}":`, error.message);
+    console.error(`❌ Error al hacer scraping de MercadoLibre: ${error.message}`);
     return [];
   }
 }
