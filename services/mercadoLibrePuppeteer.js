@@ -1,9 +1,10 @@
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false, // Puedes cambiar a true si no quieres ver el navegador
     args: ['--no-sandbox']
   });
 
@@ -20,17 +21,22 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 10000 });
 
-    // Reemplazamos waitForTimeout con setTimeout manual
+    // Espera adicional por si hay contenido que carga lento
     await new Promise(resolve => setTimeout(resolve, 2000));
 
+    // Guardar HTML para inspección
+    const html = await page.content();
+    fs.writeFileSync('ml_debug.html', html);
+    console.log('🧪 HTML guardado como "ml_debug.html". Ábrelo en tu navegador para revisar.');
+
+    // Captura de pantalla completa
     await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
 
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item');
-      // Evitamos console.log dentro de evaluate
-      // console.log('Items encontrados:', items.length);
-
       const resultado = [];
+
+      console.log('📦 Total de elementos detectados:', items.length);
 
       for (let item of items) {
         if (resultado.length >= max) break;
@@ -42,7 +48,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText.replace(/[^\d]/g, '') || '00';
           const precio = parseFloat(`${entero}.${decimal}`);
 
-          if (nombre && urlProducto && precio) {
+          if (nombre && urlProducto && !isNaN(precio)) {
             resultado.push({
               nombre,
               precio,
@@ -59,10 +65,11 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           continue;
         }
       }
+
       return resultado;
     }, maxResults);
 
-    console.log(`🧪 Productos encontrados: ${productos.length}`);
+    console.log(`✅ Productos encontrados: ${productos.length}`);
     return productos;
   } catch (err) {
     console.error(`❌ Error en scraping MercadoLibre con Puppeteer:`, err.message);
