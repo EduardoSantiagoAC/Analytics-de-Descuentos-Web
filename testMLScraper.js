@@ -2,6 +2,8 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const scrapeMercadoLibre = require('./services/mercadoLibreScraper');
 const Producto = require('./Models/Producto');
+const axios = require('axios');
+const fs = require('fs');
 
 (async () => {
   try {
@@ -13,6 +15,17 @@ const Producto = require('./Models/Producto');
 
     if (productos.length === 0) {
       console.log('⚠️ No se encontraron productos.');
+
+      // 🔎 Guardar HTML para inspección manual
+      const { data: html } = await axios.get(`https://listado.mercadolibre.com.mx/${encodeURIComponent(termino)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Accept-Language': 'es-MX,es;q=0.9'
+        },
+        timeout: 15000
+      });
+      fs.writeFileSync('ml_debug.html', html);
+      console.log('🧪 HTML guardado como "ml_debug.html". Ábrelo en tu navegador para revisar.');
       return;
     }
 
