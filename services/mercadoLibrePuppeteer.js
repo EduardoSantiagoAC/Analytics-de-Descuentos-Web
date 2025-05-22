@@ -37,8 +37,8 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
         const item = items[i];
 
         try {
-          const nombre = item.querySelector('h2.ui-search-item__title')?.innerText?.trim() || null;
-          const urlProducto = item.querySelector('a.ui-search-link')?.href?.split('?')[0] || null;
+          const nombre = item.querySelector('a.poly-component__title')?.innerText || null;
+          const urlProducto = item.querySelector('a.poly-component__title')?.href || null;
           const entero = item.querySelector('.andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '') || null;
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
           const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
