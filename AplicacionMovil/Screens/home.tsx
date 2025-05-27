@@ -36,6 +36,9 @@ interface Product {
   category: ProductCategory;
 }
 
+// 👇 Cambiá esta IP por la IP local de tu PC si usás un celular físico
+const BACKEND_URL = "http://192.168.0.9:3000";
+
 const HomeScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [activeCategory, setActiveCategory] = useState<string>("Home");
@@ -55,9 +58,10 @@ const HomeScreen = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`
+        `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`
       );
       const data = await response.json();
+      console.log("📦 Productos recibidos:", data);
 
       if (!Array.isArray(data)) throw new Error("Respuesta inválida");
 
@@ -68,12 +72,12 @@ const HomeScreen = () => {
         oldPrice: p.precioOriginal || p.precio,
         price: p.precio,
         discount: p.porcentajeDescuento || 0,
-        category: "Ropa", // Podés ajustar esto si tenés categorización real
+        category: "Ropa",
       }));
 
       setProductos(productosConvertidos);
     } catch (err: any) {
-      console.error("❌ Error cargando productos:", err);
+      console.error("❌ Error cargando productos:", err.message);
       setError("No se pudieron cargar los productos.");
     } finally {
       setCargando(false);
