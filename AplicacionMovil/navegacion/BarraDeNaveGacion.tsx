@@ -1,10 +1,12 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen  from '../Screens/home';
+
+import HomeScreen from '../Screens/home';
 import RopaScreen from '../Screens/Ropa';
 import ElectronicaScreen from '../Screens/Electronica';
 import HogarScreen from '../Screens/Articuloshogar';
-//import Detalles from '../Screens/detalles';
+import BusquedaScreen from '../Screens/Busqueda';
+
 const Stack = createNativeStackNavigator();
 
 const MainNavigator = () => {
@@ -14,6 +16,7 @@ const MainNavigator = () => {
       <Stack.Screen name="Ropa" component={RopaScreen} />
       <Stack.Screen name="Electrónica" component={ElectronicaScreen} />
       <Stack.Screen name="Hogar" component={HogarScreen} />
+      <Stack.Screen name="Buscar" component={BusquedaScreen} /> {/* <-- aquí sí */}
     </Stack.Navigator>
   );
 };
