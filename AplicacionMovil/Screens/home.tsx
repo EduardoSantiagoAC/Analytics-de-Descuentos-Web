@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import Header from "../componentes/Cabezal";
@@ -28,8 +28,26 @@ interface Product {
   category: ProductCategory;
 }
 
+// Productos de prueba (podés reemplazarlos por productos reales más adelante)
 const dummyProducts: Product[] = [
-  // ... (tus productos existentes)
+  {
+    id: 1,
+    title: "Remera deportiva",
+    image: "https://via.placeholder.com/150",
+    oldPrice: 400,
+    price: 300,
+    discount: 25,
+    category: "Ropa"
+  },
+  {
+    id: 2,
+    title: "Batidora eléctrica",
+    image: "https://via.placeholder.com/150",
+    oldPrice: 800,
+    price: 600,
+    discount: 25,
+    category: "Hogar"
+  },
 ];
 
 const HomeScreen = () => {
@@ -43,28 +61,31 @@ const HomeScreen = () => {
     }
   };
 
-  // Filtrar productos si estás en una categoría específica
-  const filteredProducts = activeCategory === "Home" 
-    ? dummyProducts 
+  const filteredProducts = activeCategory === "Home"
+    ? dummyProducts
     : dummyProducts.filter(product => product.category === activeCategory);
 
   return (
     <ScrollView style={styles.container}>
       <Header />
-      <CategoryTabs 
+      <CategoryTabs
         onCategoryChange={handleCategoryChange}
         activeCategory={activeCategory}
       />
       <PromoBanner />
       <AlertCard />
       <View style={styles.productsWrapper}>
-        {filteredProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onPress={() => navigation.navigate(product.category)}
-          />
-        ))}
+        {filteredProducts.length === 0 ? (
+          <Text style={styles.noProducts}>No hay productos disponibles.</Text>
+        ) : (
+          filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onPress={() => navigation.navigate(product.category)}
+            />
+          ))
+        )}
       </View>
     </ScrollView>
   );
@@ -80,6 +101,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+  },
+  noProducts: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
+    color: "#888",
   },
 });
 
