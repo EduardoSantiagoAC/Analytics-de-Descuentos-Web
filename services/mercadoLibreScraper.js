@@ -37,8 +37,8 @@ async function scrapeMercadoLibre(query, maxResults = 15) {
           precioOriginal: precio,
           urlProducto,
           tienda: 'MercadoLibre',
-          estadoDescuento: 'Normal',
-          porcentajeDescuento: 0,
+          estadoDescuento: 'Normal',  //Se verifica si es que el precio esta en el rango normal o esta en descuento.
+          porcentajeDescuento: 0, //Se toma directamente el descuento base que tiene el producto
           esOferta: false,
           fechaScraping: new Date()
         });
@@ -48,7 +48,7 @@ async function scrapeMercadoLibre(query, maxResults = 15) {
       }
     });
 
-    console.log(`🧪 Productos encontrados: ${productos.length}`);
+    console.log(` Productos encontrados: ${productos.length}`); // Si la busqueda fue exitosa se informa la cantidad de productos totales o maximos que acepta el codgio.
     return productos;
 
   } catch (error) {

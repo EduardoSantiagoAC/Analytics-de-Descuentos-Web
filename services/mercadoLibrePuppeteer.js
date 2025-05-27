@@ -12,11 +12,11 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
   page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'); //
   await page.setViewport({ width: 1366, height: 768 });
 
   try {
-    console.log(`🌐 Abriendo: ${url}`); //Ss
+    console.log(`🌐 Abriendo: ${url}`); //Se informa que el codigo se esta ejecutando para la depuracion
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 15000 });
@@ -24,7 +24,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
     const html = await page.content();
     fs.writeFileSync('ml_debug.html', html);
-    console.log('🧪 HTML guardado como "ml_debug.html". Ábrelo en tu navegador para revisar.');
+    console.log('🧪 HTML guardado como "ml_debug.html" .'); //Aqui se verifica si es que se realizo la busqueda correctamente
 
     await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
 
@@ -50,7 +50,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
               precioOriginal: precio,
               urlProducto,
               imagen: imagen || 'https://via.placeholder.com/150',
-              tienda: 'MercadoLibre',
+              tienda: 'MercadoLibre', //Actualmente se va a limpiar a mercado libre por temas de captchas y detecion de bots
               estadoDescuento: 'Normal',
               porcentajeDescuento: 0,
               esOferta: false,
