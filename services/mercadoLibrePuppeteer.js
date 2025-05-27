@@ -4,7 +4,7 @@ const fs = require('fs');
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
   const browser = await puppeteer.launch({
-    headless: false, // true si deseas ocultar el navegador
+    headless: false,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
@@ -16,29 +16,21 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   await page.setViewport({ width: 1366, height: 768 });
 
   try {
-    console.log(`🌐 Abriendo: ${url}`);
+    console.log(`🌐 Abriendo: ${url}`); //Ss
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Espera explícita a los productos
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 15000 });
-
-    // Esperar manualmente unos segundos más para cargar dinámicamente
     await new Promise(resolve => setTimeout(resolve, 2500));
 
-    // Guardar HTML para depuración
     const html = await page.content();
     fs.writeFileSync('ml_debug.html', html);
     console.log('🧪 HTML guardado como "ml_debug.html". Ábrelo en tu navegador para revisar.');
 
-    // Guardar captura de pantalla
     await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
 
-    // Extraer productos
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item');
       const resultado = [];
-
-      console.log('📦 Total de elementos detectados:', items.length);
 
       for (let i = 0; i < items.length && resultado.length < max; i++) {
         const item = items[i];
@@ -49,15 +41,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           const entero = item.querySelector('.andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '') || null;
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
           const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
-
-          // Opcional: capturar imagen
-          const imagen = item.querySelector('img.ui-search-result-image__element')?.src || null;
-
-          console.log(`🕵️‍♂️ Producto ${i + 1}:`);
-          console.log(`- nombre: ${nombre}`);
-          console.log(`- urlProducto: ${urlProducto}`);
-          console.log(`- precio: ${precio}`);
-          if (imagen) console.log(`- imagen: ${imagen}`);
+          const imagen = item.querySelector('img.ui-search-result-image__element')?.getAttribute('src') || '';
 
           if (nombre && urlProducto && !isNaN(precio)) {
             resultado.push({
@@ -65,7 +49,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
               precio,
               precioOriginal: precio,
               urlProducto,
-              imagen,
+              imagen: imagen || 'https://via.placeholder.com/150',
               tienda: 'MercadoLibre',
               estadoDescuento: 'Normal',
               porcentajeDescuento: 0,
@@ -73,8 +57,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
               fechaScraping: new Date().toISOString()
             });
           }
-        } catch (err) {
-          console.log(`⚠️ Error procesando producto ${i + 1}: ${err.message}`);
+        } catch (_) {
           continue;
         }
       }
