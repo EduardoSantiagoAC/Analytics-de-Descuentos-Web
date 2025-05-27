@@ -37,7 +37,7 @@ interface Product {
 }
 
 // 👇 Cambiá esta IP por la IP local de tu PC si usás un celular físico
-const BACKEND_URL = "http://192.168.0.9:3000";
+const BACKEND_URL = "http://localhost:3000";
 
 const HomeScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
