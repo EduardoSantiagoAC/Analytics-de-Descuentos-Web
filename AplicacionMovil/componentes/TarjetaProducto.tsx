@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Button } from "react-native";
 
-export interface Product {
+interface Product {
   id: string;
   title: string;
   image: string;
@@ -11,65 +11,70 @@ export interface Product {
   category: string;
 }
 
-interface ProductCardProps {
+interface Props {
   product: Product;
-  onPress?: () => void;
+  onAddToCart?: (product: Product) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
+const ProductCard: React.FC<Props> = ({ product, onAddToCart }) => {
+  const [expandido, setExpandido] = useState(false);
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.discount}>{product.discount}%</Text>
+    <TouchableOpacity onPress={() => setExpandido(!expandido)} style={styles.card}>
       <Image source={{ uri: product.image }} style={styles.image} />
       <Text style={styles.title}>{product.title}</Text>
-      <Text style={styles.oldPrice}>${product.oldPrice.toFixed(2)}</Text>
       <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+
+      {expandido && (
+        <View style={styles.extra}>
+          <Text style={styles.oldPrice}>Precio original: ${product.oldPrice.toFixed(2)}</Text>
+          <Text style={styles.discount}>Descuento: {product.discount}%</Text>
+          <Button title="Añadir al carrito" onPress={() => onAddToCart?.(product)} />
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    width: "47%",
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    flex: 1,
+    margin: 8,
     padding: 10,
-    marginBottom: 15,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  discount: {
-    backgroundColor: "#f46c1f",
-    color: "white",
-    alignSelf: "flex-start",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginBottom: 5,
-    fontWeight: "bold",
+    shadowRadius: 5,
   },
   image: {
     width: "100%",
-    height: 100,
-    resizeMode: "contain",
-    marginBottom: 8,
+    height: 120,
+    borderRadius: 8,
+    resizeMode: "cover",
   },
   title: {
-    fontWeight: "600",
     fontSize: 14,
-    marginBottom: 4,
-  },
-  oldPrice: {
-    fontSize: 12,
-    color: "#999",
-    textDecorationLine: "line-through",
+    fontWeight: "bold",
+    marginTop: 8,
   },
   price: {
     fontSize: 14,
-    fontWeight: "bold",
+    color: "#4caf50",
+  },
+  extra: {
+    marginTop: 10,
+  },
+  oldPrice: {
+    fontSize: 12,
+    textDecorationLine: "line-through",
+    color: "#888",
+  },
+  discount: {
+    fontSize: 12,
+    color: "#f44336",
+    marginBottom: 6,
   },
 });
 

@@ -112,6 +112,11 @@ const HomeScreen = () => {
     }
   };
 
+  const añadirAlCarrito = (producto: Product) => {
+    console.log("🛒 Añadido al carrito:", producto.title);
+    // Aquí puedes agregar lógica para almacenar en un estado global o local
+  };
+
   const filteredProducts =
     activeCategory === "Home"
       ? productos
@@ -151,7 +156,7 @@ const HomeScreen = () => {
         renderItem={({ item }) => (
           <ProductCard
             product={item}
-            onPress={() => console.log("Producto:", item.title)}
+            onAddToCart={añadirAlCarrito}
           />
         )}
         contentContainerStyle={styles.productsWrapper}
