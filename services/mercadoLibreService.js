@@ -1,42 +1,69 @@
-const axios = require('axios');
+const puppeteer = require('puppeteer');
 
-async function buscarEnMercadoLibre(query, limit = 20) {
+async function scrapeProductoMercadoLibre(url) {
+  const browser = await puppeteer.launch({ headless: 'new' });
+  const page = await browser.newPage();
   try {
-    const url = `https://api.mercadolibre.com/sites/MLM/search?q=${encodeURIComponent(query)}&limit=${limit}`;
-    const { data } = await axios.get(url, {
-     headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'application/json'
-      }
-    });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
+    await page.waitForSelector('h1', { timeout: 10000 });
 
-    const resultados = data.results.map(item => {
-      const porcentajeDescuento = item.original_price && item.original_price > item.price
-        ? Math.round(((item.original_price - item.price) / item.original_price) * 100)
-        : 0;
+    const producto = await page.evaluate(() => {
+      const obtenerTexto = (selector) => {
+        const el = document.querySelector(selector);
+        return el ? el.innerText.trim() : null;
+      };
+
+      const obtenerFloat = (selector) => {
+        const el = document.querySelector(selector);
+        if (!el) return null;
+        const texto = el.innerText.replace(/[^\d.,]/g, '').replace(',', '');
+        return parseFloat(texto);
+      };
 
       return {
-        nombre: item.title,
-        precio: item.price,
-        precioOriginal: item.original_price || item.price,
-        urlProducto: item.permalink,
-        tienda: 'MercadoLibre',
-        estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
-        porcentajeDescuento,
-        esOferta: porcentajeDescuento > 10,
-        fechaScraping: new Date(),
-        disponible: item.available_quantity > 0,
-        vendedor: item.seller?.id || null,
-        ubicacion: item.address?.state_name || 'Desconocido'
+        nombre: obtenerTexto('h1'),
+        precio: obtenerFloat('.ui-pdp-price__second-line span span'),
+        precioOriginal: obtenerFloat('.ui-pdp-price__original-value'),
       };
     });
 
-    return resultados;
-  } catch (err) {
-    console.error(`❌ Error al buscar "${query}" en MercadoLibre:`, err.message);
-    return [];
+    // 🔍 Intentamos obtener una imagen válida
+    let imagen = null;
+
+    try {
+      await page.waitForSelector('img.ui-pdp-image', { timeout: 5000 });
+      imagen = await page.$eval('img.ui-pdp-image', img => img.src);
+    } catch {
+      console.warn('⚠️ No se encontró imagen real, usando placeholder.');
+      imagen = 'https://via.placeholder.com/150';
+    }
+
+    await browser.close();
+
+    return {
+      ...producto,
+      imagen,
+      urlProducto: url,
+      stock: true,
+      porcentajeDescuento:
+        producto.precioOriginal && producto.precioOriginal > producto.precio
+          ? Math.round(
+              ((producto.precioOriginal - producto.precio) / producto.precioOriginal) * 100
+            )
+          : 0,
+      estadoDescuento:
+        producto.precioOriginal && producto.precioOriginal > producto.precio
+          ? 'Con descuento'
+          : 'Normal',
+      tienda: 'MercadoLibre',
+      fechaActualizacion: new Date(),
+    };
+  } catch (error) {
+    console.error('❌ Error al scrapear producto:', error);
+    await browser.close();
+    throw error;
   }
 }
 
-module.exports = buscarEnMercadoLibre;
+module.exports = { scrapeProductoMercadoLibre };
