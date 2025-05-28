@@ -41,16 +41,28 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
           const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
 
-          // 🛠️ Imagen: intentamos obtener src, sino data-src, sino srcset
+          // 🛠️ Imagen robusta: evitar base64 y placeholders
           const imgTag = item.querySelector('img');
-          let imagen = imgTag?.getAttribute('src') 
-                    || imgTag?.getAttribute('data-src') 
-                    || imgTag?.getAttribute('srcset') 
-                    || '';
+          let imagen = '';
 
-          // Si srcset contiene múltiples urls, tomar la primera
-          if (imagen.includes(' ')) {
-            imagen = imagen.split(' ')[0];
+          if (imgTag) {
+            imagen = imgTag.getAttribute('src')?.trim() || '';
+
+            // Ignorar imágenes base64 o placeholders
+            if (
+              !imagen ||
+              imagen.startsWith('data:image') ||
+              imagen.includes('placeholder.com')
+            ) {
+              imagen = imgTag.getAttribute('data-src')?.trim()
+                    || imgTag.getAttribute('data-srcset')?.trim()
+                    || '';
+            }
+
+            // Si srcset contiene varias URLs, tomar la primera
+            if (imagen.includes(' ')) {
+              imagen = imagen.split(' ')[0];
+            }
           }
 
           if (nombre && urlProducto && !isNaN(precio)) {
