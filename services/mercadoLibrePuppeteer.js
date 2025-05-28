@@ -1,23 +1,6 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs');
-const path = require('path');
 
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
-  const debugHtml = 'ml_debug.html';
-  const debugPng = 'debug-mercadolibre.png';
-
-  // 🧹 Eliminar archivos anteriores si existen
-  [debugHtml, debugPng].forEach(file => {
-    try {
-      if (fs.existsSync(file)) {
-        fs.unlinkSync(file);
-        console.log(`🗑️ Archivo eliminado: ${file}`);
-      }
-    } catch (err) {
-      console.warn(`⚠️ No se pudo borrar el archivo ${file}:`, err.message);
-    }
-  });
-
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
   const browser = await puppeteer.launch({
     headless: false,
@@ -28,7 +11,9 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
   page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+  );
   await page.setViewport({ width: 1366, height: 768 });
 
   try {
@@ -37,11 +22,6 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 15000 });
     await new Promise(resolve => setTimeout(resolve, 2500));
-
-    const html = await page.content();
-    fs.writeFileSync(debugHtml, html);
-    console.log(`🧪 HTML guardado como "${debugHtml}".`);
-    await page.screenshot({ path: debugPng, fullPage: true });
 
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item');
