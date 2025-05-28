@@ -51,13 +51,13 @@ const HomeScreen = () => {
   }, []);
 
   const convertirProducto = (p: any): Product => ({
-    id: p._id || Math.random().toString(),
-    title: p.nombre,
+    id: p._id?.toString() || Math.random().toString(),
+    title: p.nombre || "Sin título",
     image: p.imagen || "https://via.placeholder.com/150",
-    oldPrice: p.precioOriginal || p.precio,
-    price: p.precio,
+    oldPrice: p.precioOriginal || p.precio || 0,
+    price: p.precio || 0,
     discount: p.porcentajeDescuento || 0,
-    category: p.categoria || "Ropa",
+    category: (p.categoria as ProductCategory) || "Ropa",
   });
 
   const buscarProductosInicial = async () => {
@@ -66,6 +66,7 @@ const HomeScreen = () => {
     try {
       const response = await fetch(`${BACKEND_URL}/mercado-libre/destacados`);
       const data = await response.json();
+      if (!Array.isArray(data)) throw new Error("Datos inválidos");
       const productosConvertidos = data.map(convertirProducto);
       setProductos(productosConvertidos);
     } catch (err: any) {
@@ -77,7 +78,8 @@ const HomeScreen = () => {
   };
 
   const buscarProductos = async () => {
-    if (!busqueda.trim()) return;
+    const termino = busqueda.trim();
+    if (!termino) return;
     Keyboard.dismiss();
     setCargando(true);
     setError("");
@@ -85,7 +87,7 @@ const HomeScreen = () => {
 
     try {
       const response = await fetch(
-        `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`
+        `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(termino)}&max=10`
       );
       const data = await response.json();
 
@@ -144,12 +146,12 @@ const HomeScreen = () => {
           </>
         }
         data={filteredProducts}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
         numColumns={2}
         renderItem={({ item }) => (
           <ProductCard
             product={item}
-            onPress={() => navigation.navigate(item.category)}
+            onPress={() => console.log("Producto:", item.title)}
           />
         )}
         contentContainerStyle={styles.productsWrapper}
