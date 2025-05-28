@@ -1,32 +1,39 @@
 const puppeteer = require('puppeteer');
 
-async function scrapeMercadoLibre(busqueda, limite = 10) {
-  const browser = await puppeteer.launch({ headless: 'new' });
-  const page = await browser.newPage();
-  const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(busqueda)}`;
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
+async function buscarProductosMercadoLibre(terminoBusqueda, limite = 10) {
+  const navegador = await puppeteer.launch({ headless: 'new' });
+  const pagina = await navegador.newPage();
+  const urlBusqueda = `https://www.mercadolibre.com.mx/search?as_word=${encodeURIComponent(terminoBusqueda)}`;
+  await pagina.goto(urlBusqueda, { waitUntil: 'networkidle2' });
 
-  const productos = await page.$$eval('.ui-search-result', (items, limite) => {
-    return items.slice(0, limite).map(item => {
-      const nombre = item.querySelector('h2')?.innerText || 'Sin nombre';
-      const precioTexto = item.querySelector('.price-tag-fraction')?.innerText || '0';
-      const precio = parseFloat(precioTexto.replace(/[^\d]/g, '')) || 0;
+  const productos = await pagina.evaluate((limite) => {
+    const items = [];
+    const nodos = document.querySelectorAll('.ui-search-result');
 
-      // Obtener la imagen
-      const imgElement = item.querySelector('img.poly-component__picture');
-      const imagen = imgElement?.getAttribute('src') || '';
+    for (let i = 0; i < nodos.length && items.length < limite; i++) {
+      const nodo = nodos[i];
 
-      return {
+      const nombre = nodo.querySelector('h2')?.innerText?.trim() || 'Sin nombre';
+      const precioTexto = nodo.querySelector('.price-tag-fraction')?.innerText?.replace(/[^\d]/g, '');
+      const precio = precioTexto ? parseFloat(precioTexto) : 0;
+
+      // Extraer imagen real desde el primer <img> con src válido
+      const img = nodo.querySelector('img');
+      const imagen = img?.getAttribute('src') || 'https://via.placeholder.com/150';
+
+      items.push({
         nombre,
         precio,
         imagen,
         tienda: 'MercadoLibre',
-      };
-    });
+      });
+    }
+
+    return items;
   }, limite);
 
-  await browser.close();
+  await navegador.close();
   return productos;
 }
 
-module.exports = { scrapeMercadoLibre };
+module.exports = { buscarProductosMercadoLibre };
