@@ -25,7 +25,6 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     const html = await page.content();
     fs.writeFileSync('ml_debug.html', html);
     console.log('🧪 HTML guardado como "ml_debug.html".');
-
     await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
 
     const productos = await page.evaluate((max) => {
@@ -42,11 +41,16 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
           const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
 
-          // Obtener imagen correctamente
-          const imgTag = item.querySelector('img.ui-search-result-image__element');
-          let imagen = imgTag?.getAttribute('src') || imgTag?.getAttribute('data-src') || imgTag?.getAttribute('srcset') || '';
-          if (imagen && imagen.includes(' ')) {
-            imagen = imagen.split(' ')[0]; // srcset puede traer varias URLs
+          // 🛠️ Imagen: intentamos obtener src, sino data-src, sino srcset
+          const imgTag = item.querySelector('img');
+          let imagen = imgTag?.getAttribute('src') 
+                    || imgTag?.getAttribute('data-src') 
+                    || imgTag?.getAttribute('srcset') 
+                    || '';
+
+          // Si srcset contiene múltiples urls, tomar la primera
+          if (imagen.includes(' ')) {
+            imagen = imagen.split(' ')[0];
           }
 
           if (nombre && urlProducto && !isNaN(precio)) {
