@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  ScrollView,
+  FlatList,
   StyleSheet,
   View,
   Text,
@@ -36,22 +36,48 @@ interface Product {
   category: ProductCategory;
 }
 
-// 👇 
-const BACKEND_URL = "http://localhost:3000";
+// ⚠️ Cambia esto según tu entorno: "localhost" en iOS, "10.0.2.2" en Android emulator
+const BACKEND_URL = "http://10.0.2.2:3000";
 
 const HomeScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [activeCategory, setActiveCategory] = useState<string>("Home");
-
   const [productos, setProductos] = useState<Product[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [busqueda, setBusqueda] = useState("");
 
+  useEffect(() => {
+    buscarProductosInicial();
+  }, []);
+
+  const buscarProductosInicial = async () => {
+    setCargando(true);
+    setError("");
+    try {
+      const response = await fetch(`${BACKEND_URL}/mercado-libre/destacados`);
+      const data = await response.json();
+      const productosConvertidos = data.map((p: any, index: number): Product => ({
+        id: index,
+        title: p.nombre,
+        image: p.imagen || "https://via.placeholder.com/150",
+        oldPrice: p.precioOriginal || p.precio,
+        price: p.precio,
+        discount: p.porcentajeDescuento || 0,
+        category: p.categoria || "Ropa",
+      }));
+      setProductos(productosConvertidos);
+    } catch (err: any) {
+      console.error("❌ Error cargando productos iniciales:", err.message);
+      setError("No se pudieron cargar los productos iniciales.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
   const buscarProductos = async () => {
     if (!busqueda.trim()) return;
     Keyboard.dismiss();
-
     setCargando(true);
     setError("");
     setProductos([]);
@@ -61,7 +87,6 @@ const HomeScreen = () => {
         `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`
       );
       const data = await response.json();
-      console.log("📦 Productos recibidos:", data);
 
       if (!Array.isArray(data)) throw new Error("Respuesta inválida");
 
@@ -72,12 +97,12 @@ const HomeScreen = () => {
         oldPrice: p.precioOriginal || p.precio,
         price: p.precio,
         discount: p.porcentajeDescuento || 0,
-        category: "Ropa",
+        category: p.categoria || "Ropa",
       }));
 
       setProductos(productosConvertidos);
     } catch (err: any) {
-      console.error("❌ Error cargando productos:", err.message);
+      console.error("❌ Error en búsqueda:", err.message);
       setError("No se pudieron cargar los productos.");
     } finally {
       setCargando(false);
@@ -97,40 +122,45 @@ const HomeScreen = () => {
       : productos.filter((product) => product.category === activeCategory);
 
   return (
-    <ScrollView style={styles.container}>
-      <Header />
-      <View style={styles.searchContainer}>
-        <TextInput
-          value={busqueda}
-          onChangeText={setBusqueda}
-          placeholder="Buscar productos..."
-          style={styles.input}
-        />
-        <Button title="Buscar" onPress={buscarProductos} />
-      </View>
-
-      <CategoryTabs onCategoryChange={handleCategoryChange} activeCategory={activeCategory} />
-      <PromoBanner />
-      <AlertCard />
-
-      <View style={styles.productsWrapper}>
-        {cargando ? (
-          <ActivityIndicator size="large" color="#6200ee" />
-        ) : error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : filteredProducts.length === 0 ? (
-          <Text style={styles.noProducts}>No hay productos disponibles.</Text>
-        ) : (
-          filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onPress={() => navigation.navigate(product.category)}
+    <View style={styles.container}>
+      <FlatList
+        ListHeaderComponent={
+          <>
+            <Header />
+            <View style={styles.searchContainer}>
+              <TextInput
+                value={busqueda}
+                onChangeText={setBusqueda}
+                placeholder="Buscar productos..."
+                style={styles.input}
+              />
+              <Button title="Buscar" onPress={buscarProductos} />
+            </View>
+            <CategoryTabs
+              onCategoryChange={handleCategoryChange}
+              activeCategory={activeCategory}
             />
-          ))
+            <PromoBanner />
+            <AlertCard />
+            {cargando && <ActivityIndicator size="large" color="#6200ee" />}
+            {error !== "" && <Text style={styles.errorText}>{error}</Text>}
+            {!cargando && !error && filteredProducts.length === 0 && (
+              <Text style={styles.noProducts}>No hay productos disponibles.</Text>
+            )}
+          </>
+        }
+        data={filteredProducts}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        renderItem={({ item }) => (
+          <ProductCard
+            product={item}
+            onPress={() => navigation.navigate(item.category)}
+          />
         )}
-      </View>
-    </ScrollView>
+        contentContainerStyle={styles.productsWrapper}
+      />
+    </View>
   );
 };
 
@@ -152,9 +182,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   productsWrapper: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
+    paddingBottom: 20,
   },
   noProducts: {
     textAlign: "center",
