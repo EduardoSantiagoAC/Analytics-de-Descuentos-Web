@@ -37,7 +37,7 @@ interface Product {
 }
 
 // ⚠️ Cambia esto según tu entorno: "localhost" en iOS, "10.0.2.2" en Android emulator
-const BACKEND_URL = "http://10.0.2.2:3000";
+const BACKEND_URL = "192.168.56.1";
 
 const HomeScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
