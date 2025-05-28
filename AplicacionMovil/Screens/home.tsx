@@ -36,8 +36,8 @@ interface Product {
   category: ProductCategory;
 }
 
-// ⚠️ Cambia esto según tu entorno: "localhost" en iOS, "10.0.2.2" en Android emulator
-const BACKEND_URL = "192.168.56.1";
+// Cambia esta IP por la IP local donde corre tu backend, debe incluir http://
+const BACKEND_URL = "http://192.168.56.1:3000";
 
 const HomeScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
