@@ -27,7 +27,7 @@ type RootStackParamList = {
 type ProductCategory = keyof Omit<RootStackParamList, "Home">;
 
 interface Product {
-  id: number;
+  id: string;
   title: string;
   image: string;
   oldPrice: number;
@@ -36,7 +36,6 @@ interface Product {
   category: ProductCategory;
 }
 
-// Cambia esta IP por la IP local donde corre tu backend, debe incluir http://
 const BACKEND_URL = "http://192.168.56.1:3000";
 
 const HomeScreen = () => {
@@ -51,21 +50,23 @@ const HomeScreen = () => {
     buscarProductosInicial();
   }, []);
 
+  const convertirProducto = (p: any): Product => ({
+    id: p._id || Math.random().toString(),
+    title: p.nombre,
+    image: p.imagen || "https://via.placeholder.com/150",
+    oldPrice: p.precioOriginal || p.precio,
+    price: p.precio,
+    discount: p.porcentajeDescuento || 0,
+    category: p.categoria || "Ropa",
+  });
+
   const buscarProductosInicial = async () => {
     setCargando(true);
     setError("");
     try {
       const response = await fetch(`${BACKEND_URL}/mercado-libre/destacados`);
       const data = await response.json();
-      const productosConvertidos = data.map((p: any, index: number): Product => ({
-        id: index,
-        title: p.nombre,
-        image: p.imagen || "https://via.placeholder.com/150",
-        oldPrice: p.precioOriginal || p.precio,
-        price: p.precio,
-        discount: p.porcentajeDescuento || 0,
-        category: p.categoria || "Ropa",
-      }));
+      const productosConvertidos = data.map(convertirProducto);
       setProductos(productosConvertidos);
     } catch (err: any) {
       console.error("❌ Error cargando productos iniciales:", err.message);
@@ -87,21 +88,12 @@ const HomeScreen = () => {
         `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`
       );
       const data = await response.json();
-      
+
       console.log("Respuesta del backend:", data);
 
       if (!Array.isArray(data)) throw new Error("Respuesta inválida");
 
-      const productosConvertidos = data.map((p: any, index: number): Product => ({
-        id: index,
-        title: p.nombre,
-        image: p.imagen || "https://via.placeholder.com/150",
-        oldPrice: p.precioOriginal || p.precio,
-        price: p.precio,
-        discount: p.porcentajeDescuento || 0,
-        category: p.categoria || "Ropa",
-      }));
-
+      const productosConvertidos = data.map(convertirProducto);
       setProductos(productosConvertidos);
     } catch (err: any) {
       console.error("❌ Error en búsqueda:", err.message);

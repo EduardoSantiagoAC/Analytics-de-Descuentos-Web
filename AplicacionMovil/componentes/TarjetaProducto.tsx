@@ -2,27 +2,23 @@ import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 
 export interface Product {
-  id: number;
+  id: string;
   title: string;
   image: string;
   oldPrice: number;
   price: number;
   discount: number;
-  category: 'Ropa' | 'Electrónica' | 'Hogar'; // Tipos específicos
+  category: string;
 }
 
 interface ProductCardProps {
   product: Product;
-  onPress?: () => void;  // Añade esta línea para hacerla opcional
+  onPress?: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
   return (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={onPress}  // Añade esto
-      activeOpacity={0.7}  // Opcional: efecto visual al presionar
-    >
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <Text style={styles.discount}>{product.discount}%</Text>
       <Image source={{ uri: product.image }} style={styles.image} />
       <Text style={styles.title}>{product.title}</Text>
@@ -32,7 +28,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
   );
 };
 
-//estilos de la tarjeta de producto
 const styles = StyleSheet.create({
   card: {
     width: "47%",
