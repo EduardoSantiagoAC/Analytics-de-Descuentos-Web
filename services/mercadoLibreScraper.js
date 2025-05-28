@@ -1,6 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const calcularDescuento = require('./utils/descuentos');
+const calcularDescuento = require('../Utils/descuentos');
 
 async function scrapeMercadoLibre(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;

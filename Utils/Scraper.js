@@ -3,7 +3,7 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const Producto = require('../Models/Producto.js');
-const calcularDescuento = require('./utils/descuentos');
+const calcularDescuento = require('./Utils/descuentos');
 
 puppeteer.use(StealthPlugin());
 

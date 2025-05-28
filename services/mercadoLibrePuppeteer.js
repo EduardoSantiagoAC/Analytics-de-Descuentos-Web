@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const calcularDescuento = require('./utils/descuentos');
+const calcularDescuento = require('../Utils/descuentos');
 
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
