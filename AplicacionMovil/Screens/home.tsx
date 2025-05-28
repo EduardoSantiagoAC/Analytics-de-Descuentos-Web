@@ -36,7 +36,7 @@ interface Product {
   category: ProductCategory;
 }
 
-// 👇 Cambiá esta IP por la IP local de tu PC si usás un celular físico
+// 👇 
 const BACKEND_URL = "http://localhost:3000";
 
 const HomeScreen = () => {
