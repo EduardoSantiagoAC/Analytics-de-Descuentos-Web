@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const productoSchema = new mongoose.Schema({
-  
   nombre: { 
     type: String, 
     required: true,
@@ -22,6 +21,10 @@ const productoSchema = new mongoose.Schema({
     required: true
   },
   urlProducto: String,
+  imagen: { // ✅ Campo nuevo para guardar la URL de la imagen
+    type: String,
+    default: 'https://via.placeholder.com/150'
+  },
   stock: { 
     type: Boolean, 
     default: true 
@@ -41,13 +44,10 @@ const productoSchema = new mongoose.Schema({
     type: Date, 
     default: Date.now 
   },
-
-  
   precioOriginal: {
     type: Number,
     validate: {
       validator: function(v) {
-        
         return v === null || v > this.precio;
       },
       message: 'El precio original debe ser mayor al precio actual'
@@ -70,7 +70,7 @@ const productoSchema = new mongoose.Schema({
   }
 });
 
-
+// Middleware para actualizar historial y calcular descuentos
 productoSchema.pre('save', function(next) {
   if (this.isModified('precio')) {
     this.historicoPrecios.push({ 
@@ -78,7 +78,6 @@ productoSchema.pre('save', function(next) {
       fecha: new Date()
     });
 
-    
     if (this.precioOriginal && this.precioOriginal > this.precio) {
       this.estadoDescuento = 'Descuento';
       this.porcentajeDescuento = Math.round(
@@ -94,7 +93,7 @@ productoSchema.pre('save', function(next) {
   next();
 });
 
-
+// Método personalizado
 productoSchema.methods.tendenciaPrecio = function() {
   if (this.historicoPrecios.length < 2) return 'Estable';
   const ultimo = this.historicoPrecios[this.historicoPrecios.length - 1].precio;
@@ -102,7 +101,7 @@ productoSchema.methods.tendenciaPrecio = function() {
   return ultimo < anterior ? 'Bajando' : 'Subiendo';
 };
 
-
+// Índices para optimización
 productoSchema.index({ categoria: 1, estadoDescuento: 1 });
 productoSchema.index({ precio: 1, fechaActualizacion: -1 });
 
