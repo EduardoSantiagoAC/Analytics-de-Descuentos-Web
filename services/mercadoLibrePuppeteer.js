@@ -1,5 +1,4 @@
 const puppeteer = require('puppeteer');
-const calcularDescuento = require('../Utils/descuentos');
 
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
@@ -38,9 +37,6 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
           const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
 
-          const originalPriceText = item.querySelector('.andes-money-amount__previous')?.innerText?.replace(/[^\d.,]/g, '').replace(',', '') || null;
-          const precioOriginal = originalPriceText ? parseFloat(originalPriceText) : precio;
-
           const imgTag = item.querySelector('img');
           let imagen = '';
 
@@ -63,17 +59,16 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           }
 
           if (nombre && urlProducto && !isNaN(precio)) {
-            const descuento = calcularDescuento(precio, precioOriginal);
-
             resultado.push({
               nombre,
               precio,
-              precioOriginal,
+              precioOriginal: precio,
               urlProducto,
               imagen: imagen || 'https://via.placeholder.com/150',
               tienda: 'MercadoLibre',
-              ...descuento,
-              esOferta: descuento.estadoDescuento === 'Descuento',
+              estadoDescuento: 'Normal',
+              porcentajeDescuento: 0,
+              esOferta: false,
               fechaScraping: new Date().toISOString()
             });
           }

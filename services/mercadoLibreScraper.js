@@ -1,6 +1,5 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const calcularDescuento = require('../Utils/descuentos');
 
 async function scrapeMercadoLibre(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
@@ -30,22 +29,17 @@ async function scrapeMercadoLibre(query, maxResults = 15) {
         const precioTexto = `${precioEntero}.${precioDecimal || '00'}`;
         const precio = parseFloat(precioTexto);
 
-        // Intentar encontrar el precio original (tachado)
-        const precioOriginalTexto = contenedor.find('.andes-money-amount__previous').first().text().replace(/[^\d.,]/g, '').replace(',', '');
-        const precioOriginal = precioOriginalTexto ? parseFloat(precioOriginalTexto) : precio;
-
-        if (!nombre || isNaN(precio) || !urlProducto) return;
-
-        const descuento = calcularDescuento(precio, precioOriginal);
+        if (!nombre || !precio || !urlProducto) return;
 
         productos.push({
           nombre,
           precio,
-          precioOriginal,
+          precioOriginal: precio,
           urlProducto,
           tienda: 'MercadoLibre',
-          ...descuento,
-          esOferta: descuento.estadoDescuento === 'Descuento',
+          estadoDescuento: 'Normal',  //Se verifica si es que el precio esta en el rango normal o esta en descuento.
+          porcentajeDescuento: 0, //Se toma directamente el descuento base que tiene el producto
+          esOferta: false,
           fechaScraping: new Date()
         });
 
@@ -54,7 +48,7 @@ async function scrapeMercadoLibre(query, maxResults = 15) {
       }
     });
 
-    console.log(`✅ Productos encontrados: ${productos.length}`);
+    console.log(` Productos encontrados: ${productos.length}`); // Si la busqueda fue exitosa se informa la cantidad de productos totales o maximos que acepta el codgio.
     return productos;
 
   } catch (error) {
