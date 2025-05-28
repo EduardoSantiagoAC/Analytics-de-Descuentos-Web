@@ -1,8 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');  // <-- Importar cors
 require('dotenv').config();
 
 const app = express();
+
+// Habilitar CORS para todas las rutas y orígenes
+app.use(cors());
+
 app.use(express.json());
 
 const mercadoLibreRoutes = require('./Routes/mercadoLibre');
