@@ -1,6 +1,7 @@
 // controllers/scrapingController.js
-const scrapeAmazon = require('../services/scraperAmazonService');
+const scrapeMercadoLibre = require('../services/scraperMercadoLibreService');
 const guardarProductos = require('../services/guardarProductosService');
+const Producto = require('../models/Producto');
 
 exports.scrapeAndSave = async (req, res) => {
   try {
@@ -13,7 +14,27 @@ exports.scrapeAndSave = async (req, res) => {
       });
     }
 
-    const productosScrapeados = await scrapeAmazon(producto);
+    // Buscar productos recientes de MercadoLibre que coincidan con el término
+    const productosExistentes = await Producto.find({
+      nombre: new RegExp(producto, 'i'),
+      tienda: 'MercadoLibre'
+    });
+
+    const productosRecientes = productosExistentes.filter(p => {
+      const haceMenosDeUnDia = new Date() - new Date(p.fechaScraping) < 24 * 60 * 60 * 1000;
+      return haceMenosDeUnDia;
+    });
+
+    if (productosRecientes.length > 0) {
+      return res.json({
+        success: true,
+        fuente: 'base de datos',
+        productos: productosRecientes
+      });
+    }
+
+    // Si no hay productos recientes, hacer scraping
+    const productosScrapeados = await scrapeMercadoLibre(producto);
 
     if (productosScrapeados.length === 0) {
       return res.status(404).json({
@@ -24,20 +45,12 @@ exports.scrapeAndSave = async (req, res) => {
 
     const guardados = await guardarProductos(productosScrapeados);
 
-    const stats = {
-      total: guardados.length,
-      conDescuento: guardados.filter(p => p.estadoDescuento === 'Descuento').length,
-      precioPromedio: Math.round(
-        (guardados.reduce((sum, p) => sum + p.precio, 0) / guardados.length) * 100
-      ) / 100,
-      mayorDescuento: Math.max(...guardados.map(p => p.porcentajeDescuento))
-    };
-
     res.json({
       success: true,
-      stats,
+      fuente: 'scraping',
       productos: guardados
     });
+
   } catch (error) {
     console.error('Error en scrapeAndSave:', error);
     res.status(500).json({
