@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Button } from 'react-native';
+import { View, Text, StyleSheet, Image, Button, ScrollView } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 
-export default function ProductoItem({ producto }) {
-  const [expandido, setExpandido] = useState(false);
+export default function RopaScreen() {
+  const route = useRoute();
+  const { producto } = route.params;
+  const [expandido, setExpandido] = useState(true); // Siempre expandido aquí
 
-  const toggleExpandir = () => {
-    setExpandido(!expandido);
-  };
+  if (!producto) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.error}>❌ Producto no encontrado</Text>
+      </View>
+    );
+  }
 
   return (
-    <TouchableOpacity onPress={toggleExpandir} style={styles.item}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Image source={{ uri: producto.imagen }} style={styles.image} />
       <Text style={styles.nombre}>{producto.nombre}</Text>
-      <Text>Precio: ${producto.precio}</Text>
-      <Text>Estado: {producto.estadoDescuento}</Text>
+      <Text style={styles.precio}>Precio: ${producto.precio}</Text>
+      <Text style={styles.estado}>Estado: {producto.estadoDescuento}</Text>
 
       {expandido && (
         <View style={styles.extra}>
@@ -25,36 +32,48 @@ export default function ProductoItem({ producto }) {
           </View>
         </View>
       )}
-    </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  item: {
-    padding: 12,
-    marginBottom: 8,
-    backgroundColor: '#f4f4f4',
-    borderRadius: 8,
-  },
-  nombre: {
-    fontWeight: 'bold',
-    marginBottom: 4,
+  container: {
+    padding: 16,
+    backgroundColor: '#fff',
+    flexGrow: 1,
   },
   image: {
     width: '100%',
-    height: 120,
+    height: 250,
     resizeMode: 'contain',
-    marginBottom: 8,
     borderRadius: 8,
+    marginBottom: 16,
+  },
+  nombre: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  precio: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  estado: {
+    fontSize: 14,
+    marginBottom: 12,
   },
   extra: {
-    marginTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#ccc',
-    paddingTop: 8,
+    paddingTop: 12,
   },
   boton: {
-    marginTop: 10,
-    alignSelf: 'flex-start',
+    marginTop: 16,
+  },
+  error: {
+    fontSize: 18,
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 50,
   },
 });
