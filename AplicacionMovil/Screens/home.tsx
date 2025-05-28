@@ -87,6 +87,8 @@ const HomeScreen = () => {
         `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`
       );
       const data = await response.json();
+      
+      console.log("Respuesta del backend:", data);
 
       if (!Array.isArray(data)) throw new Error("Respuesta inválida");
 
