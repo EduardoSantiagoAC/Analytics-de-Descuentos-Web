@@ -19,8 +19,7 @@ interface Props {
 const ProductCard: React.FC<Props> = ({ product, onAddToCart }) => {
   const [expandido, setExpandido] = useState(false);
 
-  // Calculamos el precio final con descuento si aplica
-  const precioFinal =
+  const precioConDescuento =
     product.discount > 0 ? product.price * (1 - product.discount / 100) : product.price;
 
   return (
@@ -28,15 +27,15 @@ const ProductCard: React.FC<Props> = ({ product, onAddToCart }) => {
       <Image source={{ uri: product.image }} style={styles.image} />
       <Text style={styles.title}>{product.title}</Text>
 
-      <View style={styles.priceContainer}>
+      <View style={styles.priceRow}>
+        <Text style={styles.discountedPrice}>${precioConDescuento.toFixed(2)}</Text>
         {product.discount > 0 && (
           <Text style={styles.oldPrice}>${product.price.toFixed(2)}</Text>
         )}
-        <Text style={styles.price}>${precioFinal.toFixed(2)}</Text>
       </View>
 
       {product.discount > 0 && (
-        <Text style={styles.discount}>-{product.discount}%</Text>
+        <Text style={styles.discount}>Descuento: {product.discount}%</Text>
       )}
 
       {expandido && (
@@ -72,26 +71,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 8,
   },
-  priceContainer: {
+  priceRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    marginTop: 4,
   },
-  price: {
-    fontSize: 14,
-    color: "#4caf50",
+  discountedPrice: {
+    fontSize: 16,
     fontWeight: "bold",
+    color: "#4caf50",
   },
   oldPrice: {
-    fontSize: 12,
-    textDecorationLine: "line-through",
+    fontSize: 13,
     color: "#888",
+    textDecorationLine: "line-through",
   },
   discount: {
     fontSize: 12,
     color: "#f44336",
-    fontWeight: "bold",
     marginTop: 2,
+    fontWeight: "bold",
   },
   extra: {
     marginTop: 10,
