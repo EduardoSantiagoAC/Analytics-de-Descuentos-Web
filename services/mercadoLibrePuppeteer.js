@@ -1,7 +1,23 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const path = require('path');
 
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
+  const debugHtml = 'ml_debug.html';
+  const debugPng = 'debug-mercadolibre.png';
+
+  // 🧹 Eliminar archivos anteriores si existen
+  [debugHtml, debugPng].forEach(file => {
+    try {
+      if (fs.existsSync(file)) {
+        fs.unlinkSync(file);
+        console.log(`🗑️ Archivo eliminado: ${file}`);
+      }
+    } catch (err) {
+      console.warn(`⚠️ No se pudo borrar el archivo ${file}:`, err.message);
+    }
+  });
+
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
   const browser = await puppeteer.launch({
     headless: false,
@@ -23,9 +39,9 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     await new Promise(resolve => setTimeout(resolve, 2500));
 
     const html = await page.content();
-    fs.writeFileSync('ml_debug.html', html);
-    console.log('🧪 HTML guardado como "ml_debug.html".');
-    await page.screenshot({ path: 'debug-mercadolibre.png', fullPage: true });
+    fs.writeFileSync(debugHtml, html);
+    console.log(`🧪 HTML guardado como "${debugHtml}".`);
+    await page.screenshot({ path: debugPng, fullPage: true });
 
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item');
@@ -41,14 +57,12 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
           const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
 
-          // 🛠️ Imagen robusta: evitar base64 y placeholders
           const imgTag = item.querySelector('img');
           let imagen = '';
 
           if (imgTag) {
             imagen = imgTag.getAttribute('src')?.trim() || '';
 
-            // Ignorar imágenes base64 o placeholders
             if (
               !imagen ||
               imagen.startsWith('data:image') ||
@@ -59,7 +73,6 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
                     || '';
             }
 
-            // Si srcset contiene varias URLs, tomar la primera
             if (imagen.includes(' ')) {
               imagen = imagen.split(' ')[0];
             }
