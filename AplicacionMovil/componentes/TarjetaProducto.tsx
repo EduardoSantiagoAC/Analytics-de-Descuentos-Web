@@ -19,16 +19,29 @@ interface Props {
 const ProductCard: React.FC<Props> = ({ product, onAddToCart }) => {
   const [expandido, setExpandido] = useState(false);
 
+  // Calculamos el precio final con descuento si aplica
+  const precioFinal =
+    product.discount > 0 ? product.price * (1 - product.discount / 100) : product.price;
+
   return (
     <TouchableOpacity onPress={() => setExpandido(!expandido)} style={styles.card}>
       <Image source={{ uri: product.image }} style={styles.image} />
       <Text style={styles.title}>{product.title}</Text>
-      <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+
+      <View style={styles.priceContainer}>
+        {product.discount > 0 && (
+          <Text style={styles.oldPrice}>${product.price.toFixed(2)}</Text>
+        )}
+        <Text style={styles.price}>${precioFinal.toFixed(2)}</Text>
+      </View>
+
+      {product.discount > 0 && (
+        <Text style={styles.discount}>-{product.discount}%</Text>
+      )}
 
       {expandido && (
         <View style={styles.extra}>
-          <Text style={styles.oldPrice}>Precio original: ${product.oldPrice.toFixed(2)}</Text>
-          <Text style={styles.discount}>Descuento: {product.discount}%</Text>
+          <Text style={styles.category}>Categoría: {product.category}</Text>
           <Button title="Añadir al carrito" onPress={() => onAddToCart?.(product)} />
         </View>
       )}
@@ -59,12 +72,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 8,
   },
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   price: {
     fontSize: 14,
     color: "#4caf50",
-  },
-  extra: {
-    marginTop: 10,
+    fontWeight: "bold",
   },
   oldPrice: {
     fontSize: 12,
@@ -74,6 +90,15 @@ const styles = StyleSheet.create({
   discount: {
     fontSize: 12,
     color: "#f44336",
+    fontWeight: "bold",
+    marginTop: 2,
+  },
+  extra: {
+    marginTop: 10,
+  },
+  category: {
+    fontSize: 12,
+    color: "#555",
     marginBottom: 6,
   },
 });
