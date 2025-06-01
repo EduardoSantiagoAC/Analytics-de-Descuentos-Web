@@ -26,24 +26,48 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     console.log(`🌐 Abriendo: ${url}`);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    await page.waitForSelector('li.ui-search-layout__item', { timeout: 15000 });
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    // Intentar esperar por uno de múltiples selectores
+    const selectors = [
+      'li.ui-search-layout__item',
+      'div.andes-card', // Selector alternativo para páginas de promociones
+      'div.ui-search-result' // Otro posible selector
+    ];
+    
+    let foundSelector = false;
+    for (const selector of selectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 20000 });
+        console.log(`✅ Selector encontrado: ${selector}`);
+        foundSelector = true;
+        break;
+      } catch (err) {
+        console.log(`⚠️ Selector ${selector} no encontrado, intentando el siguiente...`);
+      }
+    }
+
+    if (!foundSelector) {
+      throw new Error('No se encontraron selectores de productos en la página');
+    }
+
+    // Agregar espera adicional para contenido dinámico
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     const productos = await page.evaluate((max) => {
-      const items = document.querySelectorAll('li.ui-search-layout__item');
+      // Usar un selector más genérico para cubrir diferentes estructuras
+      const items = document.querySelectorAll('li.ui-search-layout__item, div.andes-card, div.ui-search-result');
       const resultado = [];
 
       for (let i = 0; i < items.length && resultado.length < max; i++) {
         const item = items[i];
 
         try {
-          const nombre = item.querySelector('a.poly-component__title')?.innerText.trim() || null;
-          const urlProducto = item.querySelector('a.poly-component__title')?.href || null;
+          const nombre = item.querySelector('a.poly-component__title, h2.ui-search-item__title, h2.andes-card__title')?.innerText.trim() || null;
+          const urlProducto = item.querySelector('a.poly-component__title, a.ui-search-link')?.href || null;
 
-          // Precio con descuento (el grande)
-          const precioDescuentoTexto = item.querySelector('.andes-money-amount--cents-superscript .andes-money-amount__fraction')?.innerText || '';
-          // Precio original (el tachado)
-          const precioOriginalTexto = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction')?.innerText || '';
+          // Precio con descuento
+          const precioDescuentoTexto = item.querySelector('.andes-money-amount--cents-superscript .andes-money-amount__fraction, .ui-search-price__part .andes-money-amount__fraction')?.innerText || '';
+          // Precio original
+          const precioOriginalTexto = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction, .ui-search-price__original-value .andes-money-amount__fraction')?.innerText || '';
 
           const imgTag = item.querySelector('img');
           let imagen = '';
