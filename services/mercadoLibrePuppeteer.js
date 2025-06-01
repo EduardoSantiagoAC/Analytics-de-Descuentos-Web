@@ -21,7 +21,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 15000 });
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    await new Promise(resolve => setTimeout(resolve, 3000)); // tiempo extra para que cargue todo
 
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item');
@@ -31,41 +31,36 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
         const item = items[i];
 
         try {
-          const nombre = item.querySelector('a.poly-component__title')?.innerText.trim() || null;
-          const urlProducto = item.querySelector('a.poly-component__title')?.href || null;
+          // Título y URL
+          const nombre = item.querySelector('h2.ui-search-item__title')?.innerText.trim() || null;
+          const urlProducto = item.querySelector('a.ui-search-link')?.href || null;
 
-          // Precio actual (con descuento si aplica)
-          const entero = item.querySelector('.andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '') || null;
-          const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
-          const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
+          // Precio actual
+          const entero = item.querySelector('.andes-money-amount__fraction')?.innerText.replace(/[^\d]/g, '') || null;
+          const decimal = item.querySelector('.andes-money-amount__cents')?.innerText.replace(/[^\d]/g, '') || '00';
+          const precio = entero ? parseFloat(`${entero}.${decimal}`) : null;
 
           // Precio original tachado (si existe)
-          const originalEntero = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '');
-          const originalDecimal = item.querySelector('.andes-money-amount--previous .andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
-          const precioOriginal = originalEntero ? parseFloat(`${originalEntero}.${originalDecimal}`) : null;
+          const originalEntero = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction')?.innerText.replace(/[^\d]/g, '');
+          const originalDecimal = item.querySelector('.andes-money-amount--previous .andes-money-amount__cents')?.innerText.replace(/[^\d]/g, '') || '00';
+          const precioOriginal = originalEntero ? parseFloat(`${originalEntero}.${originalDecimal}`) : precio;
 
-          // Calcular porcentaje de descuento
+          // Porcentaje descuento
           let porcentajeDescuento = 0;
           if (precioOriginal && precio && precioOriginal > precio) {
             porcentajeDescuento = Math.round(((precioOriginal - precio) / precioOriginal) * 100);
           }
 
+          // Imagen
           const imgTag = item.querySelector('img');
           let imagen = '';
-
           if (imgTag) {
             imagen = imgTag.getAttribute('src')?.trim() || '';
-
-            if (
-              !imagen ||
-              imagen.startsWith('data:image') ||
-              imagen.includes('placeholder.com')
-            ) {
+            if (!imagen || imagen.startsWith('data:image') || imagen.includes('placeholder.com')) {
               imagen = imgTag.getAttribute('data-src')?.trim()
                     || imgTag.getAttribute('data-srcset')?.trim()
                     || '';
             }
-
             if (imagen.includes(' ')) {
               imagen = imagen.split(' ')[0];
             }
@@ -75,21 +70,21 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
             resultado.push({
               nombre,
               precio,
-              precioOriginal: precioOriginal || precio,
+              precioOriginal,
               urlProducto,
               imagen: imagen || 'https://via.placeholder.com/150',
               tienda: 'MercadoLibre',
               estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
               porcentajeDescuento,
-              esOferta: porcentajeDescuento >= 10, // Consideramos oferta si es >=10%
+              esOferta: porcentajeDescuento >= 10,
               fechaScraping: new Date().toISOString()
             });
           }
-        } catch (_) {
+        } catch (e) {
+          console.warn('Error procesando producto:', e);
           continue;
         }
       }
-
       return resultado;
     }, maxResults);
 
