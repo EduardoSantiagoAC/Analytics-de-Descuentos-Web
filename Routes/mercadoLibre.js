@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const scrapeML = require('../services/mercadoLibrePuppeteer');
-const Producto = require('../Models/Producto');
+const Producto = require('../Models/Producto'); // Asegúrate de tener este modelo definido
 
 router.get('/buscar', async (req, res) => {
   const { q, max } = req.query;
@@ -12,38 +12,18 @@ router.get('/buscar', async (req, res) => {
   }
 
   try {
-    const productosScrapeados = await scrapeML(q, parseInt(max) || 10);
+    const productos = await scrapeML(q, parseInt(max) || 10);
 
-    if (productosScrapeados.length === 0) {
+    if (productos.length === 0) {
       return res.status(404).json({ mensaje: 'No se encontraron productos.' });
     }
 
-    const productos = productosScrapeados.map(p => {
-      const precioFinal = p.precioConDescuento || p.precioOriginal;
-
-      return {
-        nombre: p.nombre,
-        imagen: p.imagen,
-        urlProducto: p.url,
-        precio: precioFinal, // <--- 🔥 importante
-        precioOriginal: p.precioOriginal,
-        precioConDescuento: p.precioConDescuento || null,
-        porcentajeDescuento: p.porcentajeDescuento || 0,
-        tienda: 'MercadoLibre',
-        estadoDescuento: p.porcentajeDescuento && p.porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
-        esOferta: p.porcentajeDescuento && p.porcentajeDescuento > 10
-      };
-    });
-
-    // Guardar o actualizar en MongoDB
+    // Guardar o actualizar los productos en MongoDB
     const ops = productos.map(p => ({
       updateOne: {
         filter: { urlProducto: p.urlProducto },
         update: {
-          $set: {
-            ...p,
-            fechaActualizacion: new Date()
-          },
+          $set: p,
           $push: {
             historicoPrecios: {
               precio: p.precio,
@@ -57,6 +37,7 @@ router.get('/buscar', async (req, res) => {
 
     await Producto.bulkWrite(ops);
 
+    // Puedes elegir devolver los guardados de Mongo si prefieres
     res.json(productos);
   } catch (error) {
     console.error('❌ Error en /mercado-libre/buscar:', error);

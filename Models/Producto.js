@@ -21,7 +21,7 @@ const productoSchema = new mongoose.Schema({
     required: true
   },
   urlProducto: String,
-  imagen: {
+  imagen: { // ✅ Campo nuevo para guardar la URL de la imagen
     type: String,
     default: 'https://via.placeholder.com/150'
   },
