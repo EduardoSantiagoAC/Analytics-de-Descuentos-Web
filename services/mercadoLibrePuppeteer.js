@@ -33,9 +33,22 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
         try {
           const nombre = item.querySelector('a.poly-component__title')?.innerText.trim() || null;
           const urlProducto = item.querySelector('a.poly-component__title')?.href || null;
+
+          // Precio actual (con descuento si aplica)
           const entero = item.querySelector('.andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '') || null;
           const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
           const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
+
+          // Precio original tachado (si existe)
+          const originalEntero = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '');
+          const originalDecimal = item.querySelector('.andes-money-amount--previous .andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
+          const precioOriginal = originalEntero ? parseFloat(`${originalEntero}.${originalDecimal}`) : null;
+
+          // Calcular porcentaje de descuento
+          let porcentajeDescuento = 0;
+          if (precioOriginal && precio && precioOriginal > precio) {
+            porcentajeDescuento = Math.round(((precioOriginal - precio) / precioOriginal) * 100);
+          }
 
           const imgTag = item.querySelector('img');
           let imagen = '';
@@ -62,13 +75,13 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
             resultado.push({
               nombre,
               precio,
-              precioOriginal: precio,
+              precioOriginal: precioOriginal || precio,
               urlProducto,
               imagen: imagen || 'https://via.placeholder.com/150',
               tienda: 'MercadoLibre',
-              estadoDescuento: 'Normal',
-              porcentajeDescuento: 0,
-              esOferta: false,
+              estadoDescuento: porcentajeDescuento > 0 ? 'Descuento' : 'Normal',
+              porcentajeDescuento,
+              esOferta: porcentajeDescuento >= 10, // Consideramos oferta si es >=10%
               fechaScraping: new Date().toISOString()
             });
           }
