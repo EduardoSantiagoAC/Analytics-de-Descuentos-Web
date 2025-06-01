@@ -24,20 +24,20 @@ async function scrapeMercadoLibre(busqueda) {
       const nombre = item.querySelector('.ui-search-item__title')?.innerText || '';
       const imagen = item.querySelector('img')?.src || '';
 
-      // 👇 Esto es el precio grande con descuento
-      const precioDescuentoTexto = item.querySelector('.andes-money-amount__fraction')?.innerText || '';
+      // Precio con descuento (el grande)
+      const precioDescuentoTexto = item.querySelector('.andes-money-amount--cents-superscript .andes-money-amount__fraction')?.innerText || '';
 
-      // 👇 Esto es el precio tachado (original), más pequeño
-      const precioOriginalTexto = item.querySelector('.ui-search-price__subtitles .andes-money-amount__fraction')?.innerText || '';
+      // Precio original (el tachado)
+      const precioOriginalTexto = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction')?.innerText || '';
 
-      const url = item.querySelector('a')?.href || '';
+      const urlProducto = item.querySelector('a')?.href || '';
 
       return {
         nombre,
         imagen,
         precioDescuentoTexto,
         precioOriginalTexto,
-        url,
+        urlProducto,
       };
     });
   });
@@ -55,8 +55,8 @@ async function scrapeMercadoLibre(busqueda) {
     return {
       nombre: producto.nombre,
       imagen: producto.imagen,
-      url: producto.url,
-      precio: precioConDescuento || precioOriginal || null, // Precio final usado en frontend
+      urlProducto: producto.urlProducto,
+      precio: precioConDescuento || precioOriginal || null,
       precioOriginal: precioOriginal || null,
       precioConDescuento: precioConDescuento || null,
       porcentajeDescuento: porcentajeDescuento || 0,
