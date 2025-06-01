@@ -1,10 +1,10 @@
 import React from 'react';
 import { createBottomTabsNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from '../Pantallas/home';
-import BusquedaScreen from '../Pantallas/Busqueda';
-import RopaScreen from '../Pantallas/Ropa';
-import ElectronicaScreen from '../Pantallas/Electronica';
-import HogarScreen from '../Pantallas/Articuloshogar';
+import HomeScreen from '../Screens/home';
+import BusquedaScreen from '../Screens/Busqueda';
+import RopaScreen from '../Screens/Ropa';
+import ElectronicaScreen from '../Screens/Electronica';
+import HogarScreen from '../Screens/Articuloshogar';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const Tab = createBottomTabsNavigator();
