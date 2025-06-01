@@ -3,68 +3,87 @@ import { View, TextInput, Button, ScrollView, StyleSheet, Text, ActivityIndicato
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
 
-interface ProductoML {
-  nombre: string;
-  precio: number;
-  precioOriginal: number;
-  porcentajeDescuento: number;
-  esOferta: boolean;
-  urlProducto: string;
-  imagen: string;
-  tienda: string;
-  fechaScraping: string;
+interface Product {
+  id: string;
+  title: string;
+  image: string;
+  oldPrice: number;
+  price: number;
+  discount: number;
+  category: string;
 }
+
+const BACKEND_URL = "http://localhost:3000";
+const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const BusquedaScreen = () => {
   const [busqueda, setBusqueda] = useState("");
-  const [resultados, setResultados] = useState<ProductoML[]>([]);
+  const [resultados, setResultados] = useState<Product[]>([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [soloOfertas, setSoloOfertas] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductoML | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const convertirProducto = (p: any): Product => {
+    console.log("📋 Producto crudo:", JSON.stringify(p, null, 2));
+    return {
+      id: p.urlProducto || p._id || Math.random().toString(),
+      title: p.nombre || p.title || "Sin título",
+      image: p.imagen || p.image || DEFAULT_IMAGE,
+      oldPrice: Number(p.precioOriginal || p.oldPrice || p.precio || p.price || 0),
+      price: Number(p.precio || p.price || 0),
+      discount: Number(p.porcentajeDescuento || p.discount || 0),
+      category: p.categoria || p.category || "General",
+    };
+  };
 
   const buscarProductos = async () => {
     if (!busqueda.trim()) return;
 
     setCargando(true);
     setError("");
+    setResultados([]);
 
     try {
-      const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`);
-      console.log("Estado de la respuesta (búsqueda):", response.status, response.ok);
+      const url = `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`;
+      console.log(`🌐 Enviando solicitud a ${url}`);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      console.log("✅ Estado de la respuesta:", response.status, response.ok);
       const data = await response.json();
-      console.log("Respuesta completa de la API (búsqueda):", data);
-      if (!response.ok) {
-        throw new Error(data.error || "Error al buscar productos");
+      console.log("📊 Respuesta completa de la API:", JSON.stringify(data, null, 2));
+      if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
+      // Manejar respuesta como arreglo directo
+      const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(convertirProducto);
+      console.log("📋 Productos convertidos:", JSON.stringify(productosConvertidos, null, 2));
+      if (productosConvertidos.length === 0) {
+        console.warn("⚠️ No se encontraron productos en la búsqueda");
       }
-      setResultados(data.productos || [
+      setResultados(productosConvertidos.length ? productosConvertidos : [
         {
-          nombre: "Producto de Prueba",
-          precio: 150,
-          precioOriginal: 200,
-          porcentajeDescuento: 25,
-          esOferta: true,
-          urlProducto: "https://www.mercadolibre.com.mx",
-          imagen: "https://via.placeholder.com/100x100.png?text=Producto",
-          tienda: "MercadoLibre",
-          fechaScraping: new Date().toISOString(),
+          id: "1",
+          title: "Producto de Prueba",
+          image: DEFAULT_IMAGE,
+          oldPrice: 200,
+          price: 150,
+          discount: 25,
+          category: "General",
         },
       ]);
-      console.log("Resultados establecidos:", data.productos || []);
     } catch (err: any) {
-      console.error("❌ Error al buscar productos:", err);
-      setError("Error al buscar productos");
+      console.error("❌ Error al buscar productos:", err.message);
+      setError(`Error al buscar productos: ${err.message}`);
       setResultados([
         {
-          nombre: "Producto de Prueba",
-          precio: 150,
-          precioOriginal: 200,
-          porcentajeDescuento: 25,
-          esOferta: true,
-          urlProducto: "https://www.mercadolibre.com.mx",
-          imagen: "https://via.placeholder.com/100x100.png?text=Producto",
-          tienda: "MercadoLibre",
-          fechaScraping: new Date().toISOString(),
+          id: "1",
+          title: "Producto de Prueba",
+          image: DEFAULT_IMAGE,
+          oldPrice: 200,
+          price: 150,
+          discount: 25,
+          category: "General",
         },
       ]);
     } finally {
@@ -72,9 +91,9 @@ const BusquedaScreen = () => {
     }
   };
 
-  const filteredResults = soloOfertas ? resultados.filter(p => p.esOferta) : resultados;
+  const filteredResults = soloOfertas ? resultados.filter(p => p.discount > 0) : resultados;
 
-  console.log("Resultados a renderizar:", filteredResults);
+  console.log("📋 Resultados a renderizar:", JSON.stringify(filteredResults, null, 2));
 
   return (
     <View style={styles.container}>
@@ -100,22 +119,17 @@ const BusquedaScreen = () => {
         {filteredResults.length === 0 && !cargando && !error && (
           <Text style={styles.noResults}>No se encontraron productos.</Text>
         )}
-        {filteredResults.map((p, index) => (
-          <ProductCard
-            key={index}
-            product={{
-              id: index.toString(),
-              title: p.nombre,
-              image: p.imagen || "https://via.placeholder.com/100x100.png?text=Producto",
-              oldPrice: Number(p.precioOriginal) || Number(p.precio),
-              price: Number(p.precio),
-              discount: Number(p.porcentajeDescuento) || 0,
-              category: p.categoria || "General",
-            }}
-            onAddToCart={() => console.log("🛒 Añadido al carrito:", p.nombre)}
-            onPress={() => setSelectedProduct(p)}
-          />
-        ))}
+        {filteredResults.map((p) => {
+          console.log("📋 Renderizando ProductCard para:", JSON.stringify(p, null, 2));
+          return (
+            <ProductCard
+              key={p.id}
+              product={p}
+              onAddToCart={() => console.log("🛒 Añadido al carrito:", p.title)}
+              onPress={() => setSelectedProduct(p)}
+            />
+          );
+        })}
       </ScrollView>
 
       {selectedProduct && (
@@ -123,12 +137,12 @@ const BusquedaScreen = () => {
           isVisible={!!selectedProduct}
           onClose={() => setSelectedProduct(null)}
           producto={{
-            id: selectedProduct.urlProducto,
-            imageUrl: selectedProduct.imagen,
-            title: selectedProduct.nombre,
-            description: `Precio: $${selectedProduct.precio.toFixed(2)}${selectedProduct.porcentajeDescuento ? ` (${selectedProduct.porcentajeDescuento}% OFF)` : ""}`,
-            price: `$${selectedProduct.precio.toFixed(2)}`,
-            link: selectedProduct.urlProducto,
+            id: selectedProduct.id,
+            imageUrl: selectedProduct.image,
+            title: selectedProduct.title,
+            description: `Precio: $${selectedProduct.price.toFixed(2)}${selectedProduct.discount ? ` (${selectedProduct.discount}% OFF)` : ""}`,
+            price: `$${selectedProduct.price.toFixed(2)}`,
+            link: "https://www.mercadolibre.com.mx",
           }}
         />
       )}
