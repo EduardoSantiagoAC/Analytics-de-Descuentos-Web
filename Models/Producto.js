@@ -21,13 +21,18 @@ const productoSchema = new mongoose.Schema({
     required: true
   },
   urlProducto: String,
-  imagen: { // ✅ Campo nuevo para guardar la URL de la imagen
+  imagen: { 
     type: String,
     default: 'https://via.placeholder.com/150'
   },
   stock: { 
     type: Boolean, 
     default: true 
+  },
+  unidadesDisponibles: { // ✅ Nuevo campo para unidades disponibles
+    type: Number,
+    min: 0,
+    default: null
   },
   umbralEscasez: { 
     type: Number, 
@@ -48,9 +53,9 @@ const productoSchema = new mongoose.Schema({
     type: Number,
     validate: {
       validator: function(v) {
-        return v === null || v > this.precio;
+        return v === null || v >= this.precio;
       },
-      message: 'El precio original debe ser mayor al precio actual'
+      message: 'El precio original debe ser mayor o igual al precio actual'
     }
   },
   estadoDescuento: {
@@ -90,6 +95,12 @@ productoSchema.pre('save', function(next) {
       this.esOferta = false;
     }
   }
+
+  // Actualizar esOferta basado en stock y unidades disponibles
+  if (this.unidadesDisponibles !== null && this.unidadesDisponibles <= this.umbralEscasez) {
+    this.esOferta = true; // Marcar como oferta si hay pocas unidades
+  }
+
   next();
 });
 

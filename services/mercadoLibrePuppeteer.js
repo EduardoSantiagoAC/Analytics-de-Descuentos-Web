@@ -1,5 +1,17 @@
 const puppeteer = require('puppeteer');
 
+// Función auxiliar para extraer precios
+function extraerPrecio(texto) {
+  const match = texto?.replace(/[^\d.,]/g, '').replace(',', '.').match(/\d+(\.\d+)?/);
+  return match ? parseFloat(match[0]) : null;
+}
+
+// Función auxiliar para extraer unidades disponibles
+function extraerUnidades(texto) {
+  const match = texto?.match(/(\d+)\s*(?:unidades?|disponibles?)/i);
+  return match ? parseInt(match[1]) : null;
+}
+
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
   const browser = await puppeteer.launch({
@@ -17,7 +29,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   await page.setViewport({ width: 1366, height: 768 });
 
   try {
-    console.log(`🌐 Abriendo: ${url}`);
+    console.log(`🌐 Abriendo página de búsqueda: ${url}`);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     await page.waitForSelector('li.ui-search-layout__item', { timeout: 15000 });
@@ -33,16 +45,17 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
         try {
           const nombre = item.querySelector('a.poly-component__title')?.innerText.trim() || null;
           const urlProducto = item.querySelector('a.poly-component__title')?.href || null;
-          const entero = item.querySelector('.andes-money-amount__fraction')?.innerText?.replace(/[^\d]/g, '') || null;
-          const decimal = item.querySelector('.andes-money-amount__cents')?.innerText?.replace(/[^\d]/g, '') || '00';
-          const precio = (entero !== null) ? parseFloat(`${entero}.${decimal}`) : null;
+
+          // Precio con descuento (el grande)
+          const precioDescuentoTexto = item.querySelector('.andes-money-amount--cents-superscript .andes-money-amount__fraction')?.innerText || '';
+          // Precio original (el tachado)
+          const precioOriginalTexto = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction')?.innerText || '';
 
           const imgTag = item.querySelector('img');
           let imagen = '';
 
           if (imgTag) {
             imagen = imgTag.getAttribute('src')?.trim() || '';
-
             if (
               !imagen ||
               imagen.startsWith('data:image') ||
@@ -52,23 +65,19 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
                     || imgTag.getAttribute('data-srcset')?.trim()
                     || '';
             }
-
             if (imagen.includes(' ')) {
               imagen = imagen.split(' ')[0];
             }
           }
 
-          if (nombre && urlProducto && !isNaN(precio)) {
+          if (nombre && urlProducto) {
             resultado.push({
               nombre,
-              precio,
-              precioOriginal: precio,
+              precioDescuentoTexto,
+              precioOriginalTexto,
               urlProducto,
               imagen: imagen || 'https://via.placeholder.com/150',
               tienda: 'MercadoLibre',
-              estadoDescuento: 'Normal',
-              porcentajeDescuento: 0,
-              esOferta: false,
               fechaScraping: new Date().toISOString()
             });
           }
@@ -80,8 +89,85 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
       return resultado;
     }, maxResults);
 
-    console.log(`✅ Productos encontrados: ${productos.length}`);
-    return productos;
+    // Scrapear stock desde la página individual de cada producto
+    const productosFormateados = [];
+    for (const producto of productos) {
+      try {
+        console.log(`🌐 Visitando producto: ${producto.urlProducto}`);
+        await page.goto(producto.urlProducto, { waitUntil: 'domcontentloaded', timeout: 20000 });
+
+        // Esperar selector de stock o un contenedor relevante
+        await page.waitForSelector('.ui-pdp-buybox, .ui-pdp-stock-information', { timeout: 10000 }).catch(() => {});
+
+        const stockInfo = await page.evaluate(() => {
+          const stockElement = document.querySelector('.ui-pdp-stock-information') || document.querySelector('.ui-pdp-buybox__quantity');
+          const stockTexto = stockElement?.innerText || '';
+          const comprarButton = document.querySelector('.andes-button--large:not(.andes-button--disabled)');
+          
+          return {
+            stockTexto,
+            isComprarEnabled: !!comprarButton
+          };
+        });
+
+        // Determinar stock
+        const stockTextoLower = stockInfo.stockTexto.toLowerCase();
+        const stock = !stockTextoLower.includes('agotado') && 
+                      !stockTextoLower.includes('no disponible') && 
+                      stockInfo.isComprarEnabled;
+        
+        // Extraer unidades disponibles
+        const unidadesDisponibles = extraerUnidades(stockInfo.stockTexto);
+
+        // Formatear precios y descuentos
+        const precioConDescuento = extraerPrecio(producto.precioDescuentoTexto);
+        const precioOriginal = extraerPrecio(producto.precioOriginalTexto);
+
+        let porcentajeDescuento = 0;
+        let estadoDescuento = 'Normal';
+        let esOferta = false;
+
+        if (precioOriginal && precioConDescuento && precioOriginal > precioConDescuento) {
+          porcentajeDescuento = Math.round(((precioOriginal - precioConDescuento) / precioOriginal) * 100);
+          estadoDescuento = 'Descuento';
+          esOferta = porcentajeDescuento > 10;
+        }
+
+        productosFormateados.push({
+          nombre: producto.nombre,
+          precio: precioConDescuento || precioOriginal || null,
+          precioOriginal: precioOriginal || precioConDescuento || null,
+          urlProducto: producto.urlProducto,
+          imagen: producto.imagen,
+          tienda: producto.tienda,
+          estadoDescuento,
+          porcentajeDescuento,
+          esOferta,
+          stock,
+          unidadesDisponibles: unidadesDisponibles || null,
+          fechaScraping: producto.fechaScraping
+        });
+
+        // Retraso para evitar bloqueos
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (err) {
+        console.warn(`⚠️ Error al scrapear stock para ${producto.urlProducto}: ${err.message}`);
+        productosFormateados.push({
+          ...producto,
+          precio: extraerPrecio(producto.precioDescuentoTexto) || extraerPrecio(producto.precioOriginalTexto) || null,
+          precioOriginal: extraerPrecio(producto.precioOriginalTexto) || extraerPrecio(producto.precioDescuentoTexto) || null,
+          estadoDescuento: 'Normal',
+          porcentajeDescuento: 0,
+          esOferta: false,
+          stock: true, // Valor por defecto si falla
+          unidadesDisponibles: null,
+          fechaScraping: producto.fechaScraping
+        });
+      }
+    }
+
+    console.log(`✅ Productos encontrados: ${productosFormateados.length}`);
+    return productosFormateados;
   } catch (err) {
     console.error(`❌ Error en scraping MercadoLibre con Puppeteer:`, err.stack);
     return [];
