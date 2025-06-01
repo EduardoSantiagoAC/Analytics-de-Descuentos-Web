@@ -96,13 +96,19 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
         console.log(`🌐 Visitando producto: ${producto.urlProducto}`);
         await page.goto(producto.urlProducto, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-        // Esperar selector de stock o un contenedor relevante
-        await page.waitForSelector('.ui-pdp-buybox, .ui-pdp-stock-information', { timeout: 10000 }).catch(() => {});
+        // Esperar selector de stock o contenedor relevante
+        await page.waitForSelector('.ui-pdp-buybox, .ui-pdp-stock-information, .ui-pdp-action--primary', { timeout: 10000 }).catch(() => console.log(`⚠️ No se encontraron selectores de stock para ${producto.urlProducto}`));
 
         const stockInfo = await page.evaluate(() => {
-          const stockElement = document.querySelector('.ui-pdp-stock-information') || document.querySelector('.ui-pdp-buybox__quantity');
+          // Posibles selectores para stock
+          const stockElement = document.querySelector('.ui-pdp-stock-information') ||
+                              document.querySelector('.ui-pdp-buybox__quantity') ||
+                              document.querySelector('.ui-pdp-buybox');
           const stockTexto = stockElement?.innerText || '';
-          const comprarButton = document.querySelector('.andes-button--large:not(.andes-button--disabled)');
+          
+          // Verificar si el botón de compra está habilitado
+          const comprarButton = document.querySelector('.andes-button--large:not(.andes-button--disabled)') ||
+                               document.querySelector('.ui-pdp-action--primary:not([disabled])');
           
           return {
             stockTexto,
@@ -118,6 +124,9 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
         
         // Extraer unidades disponibles
         const unidadesDisponibles = extraerUnidades(stockInfo.stockTexto);
+
+        // Log de depuración
+        console.log(`📦 Stock para ${producto.nombre}: stock=${stock}, unidadesDisponibles=${unidadesDisponibles}, texto=${stockInfo.stockTexto}`);
 
         // Formatear precios y descuentos
         const precioConDescuento = extraerPrecio(producto.precioDescuentoTexto);
