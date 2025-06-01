@@ -38,7 +38,7 @@ interface Product {
   category: ProductCategory;
 }
 
-const BACKEND_URL = "http://10.0.2.2:3000"; // Cambiado para emulador Android
+const BACKEND_URL = "http://10.0.2.2:3000";
 
 const capitalizarCategoria = (cat: string): ProductCategory => {
   if (!cat) return "Ropa";
@@ -63,7 +63,7 @@ const HomeScreen = () => {
   }, []);
 
   const convertirProducto = (p: any): Product => {
-    console.log("Producto crudo:", p); // Log para depurar
+    console.log("Producto crudo:", p);
     return {
       id: p.urlProducto || Math.random().toString(),
       title: p.nombre || "Sin título",
@@ -80,16 +80,37 @@ const HomeScreen = () => {
     setError("");
     try {
       const response = await fetch(`${BACKEND_URL}/mercado-libre/buscar?q=ofertas&max=10`);
-      console.log("Estado de la respuesta:", response.status, response.ok); // Log
+      console.log("Estado de la respuesta:", response.status, response.ok);
       const data = await response.json();
-      console.log("Respuesta completa de la API:", data); // Log
+      console.log("Respuesta completa de la API:", data);
       if (!response.ok) throw new Error(data.error || "Error al cargar productos");
       const productosConvertidos = (data.productos || []).map(convertirProducto);
-      console.log("Productos convertidos:", productosConvertidos); // Log
-      setProductos(productosConvertidos);
+      console.log("Productos convertidos:", productosConvertidos);
+      setProductos(productosConvertidos.length ? productosConvertidos : [
+        {
+          id: "1",
+          title: "Producto de Prueba",
+          image: "https://via.placeholder.com/150",
+          oldPrice: 200,
+          price: 150,
+          discount: 25,
+          category: "Ropa",
+        },
+      ]);
     } catch (err: any) {
       console.error("❌ Error cargando productos iniciales:", err);
       setError("No se pudieron cargar los productos iniciales.");
+      setProductos([
+        {
+          id: "1",
+          title: "Producto de Prueba",
+          image: "https://via.placeholder.com/150",
+          oldPrice: 200,
+          price: 150,
+          discount: 25,
+          category: "Ropa",
+        },
+      ]);
     } finally {
       setCargando(false);
     }
@@ -107,16 +128,37 @@ const HomeScreen = () => {
       const response = await fetch(
         `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(termino)}&max=10`
       );
-      console.log("Estado de la respuesta (búsqueda):", response.status, response.ok); // Log
+      console.log("Estado de la respuesta (búsqueda):", response.status, response.ok);
       const data = await response.json();
-      console.log("Respuesta completa de la API (búsqueda):", data); // Log
+      console.log("Respuesta completa de la API (búsqueda):", data);
       if (!response.ok) throw new Error(data.error || "Error al buscar productos");
       const productosConvertidos = (data.productos || []).map(convertirProducto);
-      console.log("Productos convertidos (búsqueda):", productosConvertidos); // Log
-      setProductos(productosConvertidos);
+      console.log("Productos convertidos (búsqueda):", productosConvertidos);
+      setProductos(productosConvertidos.length ? productosConvertidos : [
+        {
+          id: "1",
+          title: "Producto de Prueba",
+          image: "https://via.placeholder.com/150",
+          oldPrice: 200,
+          price: 150,
+          discount: 25,
+          category: "Ropa",
+        },
+      ]);
     } catch (err: any) {
       console.error("❌ Error en búsqueda:", err);
       setError("No se pudieron cargar los productos.");
+      setProductos([
+        {
+          id: "1",
+          title: "Producto de Prueba",
+          image: "https://via.placeholder.com/150",
+          oldPrice: 200,
+          price: 150,
+          discount: 25,
+          category: "Ropa",
+        },
+      ]);
     } finally {
       setCargando(false);
     }
@@ -138,7 +180,7 @@ const HomeScreen = () => {
       ? productos
       : productos.filter((product) => product.category === activeCategory);
 
-  console.log("Productos a renderizar:", filteredProducts); // Log final
+  console.log("Productos a renderizar:", filteredProducts);
 
   return (
     <View style={styles.container}>

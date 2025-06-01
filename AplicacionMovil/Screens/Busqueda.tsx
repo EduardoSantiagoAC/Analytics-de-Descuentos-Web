@@ -31,17 +31,42 @@ const BusquedaScreen = () => {
 
     try {
       const response = await fetch(`http://10.0.2.2:3000/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`);
-      console.log("Estado de la respuesta (búsqueda):", response.status, response.ok); // Log
+      console.log("Estado de la respuesta (búsqueda):", response.status, response.ok);
       const data = await response.json();
-      console.log("Respuesta completa de la API (búsqueda):", data); // Log
+      console.log("Respuesta completa de la API (búsqueda):", data);
       if (!response.ok) {
         throw new Error(data.error || "Error al buscar productos");
       }
-      setResultados(data.productos || []);
-      console.log("Resultados establecidos:", data.productos || []); // Log
+      setResultados(data.productos || [
+        {
+          nombre: "Producto de Prueba",
+          precio: 150,
+          precioOriginal: 200,
+          porcentajeDescuento: 25,
+          esOferta: true,
+          urlProducto: "https://www.mercadolibre.com.mx",
+          imagen: "https://via.placeholder.com/100x100.png?text=Producto",
+          tienda: "MercadoLibre",
+          fechaScraping: new Date().toISOString(),
+        },
+      ]);
+      console.log("Resultados establecidos:", data.productos || []);
     } catch (err: any) {
       console.error("❌ Error al buscar productos:", err);
       setError("Error al buscar productos");
+      setResultados([
+        {
+          nombre: "Producto de Prueba",
+          precio: 150,
+          precioOriginal: 200,
+          porcentajeDescuento: 25,
+          esOferta: true,
+          urlProducto: "https://www.mercadolibre.com.mx",
+          imagen: "https://via.placeholder.com/100x100.png?text=Producto",
+          tienda: "MercadoLibre",
+          fechaScraping: new Date().toISOString(),
+        },
+      ]);
     } finally {
       setCargando(false);
     }
@@ -49,7 +74,7 @@ const BusquedaScreen = () => {
 
   const filteredResults = soloOfertas ? resultados.filter(p => p.esOferta) : resultados;
 
-  console.log("Resultados a renderizar:", filteredResults); // Log final
+  console.log("Resultados a renderizar:", filteredResults);
 
   return (
     <View style={styles.container}>
