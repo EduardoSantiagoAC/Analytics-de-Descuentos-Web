@@ -30,7 +30,7 @@ const RopaScreen = () => {
     setError("");
 
     try {
-      const response = await fetch(`http://10.0.2.2:3000/mercado-libre/buscar?q=ropa&max=10`);
+      const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=ropa&max=10`);
       console.log("Estado de la respuesta (ropa):", response.status, response.ok); // Log
       const data = await response.json();
       console.log("Respuesta completa de la API (ropa):", data); // Log

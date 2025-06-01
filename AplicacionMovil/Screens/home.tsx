@@ -38,7 +38,7 @@ interface Product {
   category: ProductCategory;
 }
 
-const BACKEND_URL = "http://10.0.2.2:3000";
+const BACKEND_URL = "http://localhost:3000";
 
 const capitalizarCategoria = (cat: string): ProductCategory => {
   if (!cat) return "Ropa";
