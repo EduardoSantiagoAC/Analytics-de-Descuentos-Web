@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const scrapeML = require('../services/mercadoLibrePuppeteer');
-const Producto = require('../Models/Producto');
+const Producto = require('../Models/Producto'); // Asegúrate de tener este modelo definido
 
 router.get('/buscar', async (req, res) => {
   const { q, max } = req.query;
@@ -23,20 +23,7 @@ router.get('/buscar', async (req, res) => {
       updateOne: {
         filter: { urlProducto: p.urlProducto },
         update: {
-          $set: {
-            nombre: p.nombre,
-            precio: p.precio,
-            precioOriginal: p.precioOriginal,
-            urlProducto: p.urlProducto,
-            imagen: p.imagen,
-            tienda: p.tienda,
-            estadoDescuento: p.estadoDescuento,
-            porcentajeDescuento: p.porcentajeDescuento,
-            esOferta: p.esOferta,
-            stock: p.stock,
-            unidadesDisponibles: p.unidadesDisponibles,
-            fechaActualizacion: new Date()
-          },
+          $set: p,
           $push: {
             historicoPrecios: {
               precio: p.precio,
@@ -50,13 +37,8 @@ router.get('/buscar', async (req, res) => {
 
     await Producto.bulkWrite(ops);
 
-    // Devolver productos ordenados por porcentaje de descuento
-    res.json({
-      productos: productos.sort((a, b) => b.porcentajeDescuento - a.porcentajeDescuento),
-      total: productos.length,
-      conDescuento: productos.filter(p => p.estadoDescuento === 'Descuento').length,
-      sinStock: productos.filter(p => !p.stock).length
-    });
+    // Puedes elegir devolver los guardados de Mongo si prefieres
+    res.json(productos);
   } catch (error) {
     console.error('❌ Error en /mercado-libre/buscar:', error);
     res.status(500).json({ error: 'Error al hacer scraping', detalle: error.message });
