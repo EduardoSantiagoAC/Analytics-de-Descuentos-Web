@@ -1,79 +1,117 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, Button, ScrollView } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import React, { useState, useEffect } from "react";
+import { ScrollView, StyleSheet, View, Text, ActivityIndicator } from "react-native";
+import ProductCard from "../componentes/TarjetaProducto";
+import ProductoPopup from "../componentes/PopUpProducto";
 
-export default function RopaScreen() {
-  const route = useRoute();
-  const { producto } = route.params;
-  const [expandido, setExpandido] = useState(true); // Siempre expandido aquí
+interface ProductoML {
+  nombre: string;
+  precio: number;
+  precioOriginal: number;
+  porcentajeDescuento: number;
+  esOferta: boolean;
+  urlProducto: string;
+  imagen: string;
+  tienda: string;
+  fechaScraping: string;
+}
 
-  if (!producto) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.error}>❌ Producto no encontrado</Text>
-      </View>
-    );
-  }
+const RopaScreen = () => {
+  const [productos, setProductos] = useState<ProductoML[]>([]);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<ProductoML | null>(null);
+
+  useEffect(() => {
+    buscarProductos();
+  }, []);
+
+  const buscarProductos = async () => {
+    setCargando(true);
+    setError("");
+
+    try {
+      const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=ropa&max=10`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al buscar productos");
+      }
+
+      setProductos(data.productos || []);
+    } catch (err: any) {
+      setError("Error al cargar productos de ropa");
+      console.error(err);
+    } finally {
+      setCargando(false);
+    }
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Image source={{ uri: producto.imagen }} style={styles.image} />
-      <Text style={styles.nombre}>{producto.nombre}</Text>
-      <Text style={styles.precio}>Precio: ${producto.precio}</Text>
-      <Text style={styles.estado}>Estado: {producto.estadoDescuento}</Text>
+    <ScrollView style={styles.container}>
+      {cargando && <ActivityIndicator size="large" color="#6200ee" style={{ marginTop: 20 }} />}
+      {error && <Text style={styles.error}>{error}</Text>}
 
-      {expandido && (
-        <View style={styles.extra}>
-          <Text>URL: {producto.urlProducto}</Text>
-          <Text>Tienda: {producto.tienda}</Text>
-          <Text>Fecha: {new Date(producto.fechaScraping).toLocaleString()}</Text>
-          <View style={styles.boton}>
-            <Button title="Añadir al carrito" onPress={() => console.log('Añadido al carrito')} />
-          </View>
-        </View>
+      <View style={styles.grid}>
+        {productos.length === 0 && !cargando && !error && (
+          <Text style={styles.noResults}>No se encontraron productos.</Text>
+        )}
+        {productos.map((p, index) => (
+          <ProductCard
+            key={index}
+            product={{
+              id: index.toString(),
+              title: p.nombre,
+              image: p.imagen || "https://via.placeholder.com/100x100.png?text=Producto",
+              oldPrice: p.precioOriginal || p.precio,
+              price: p.precio,
+              discount: p.porcentajeDescuento || 0,
+              category: "Ropa",
+            }}
+            onAddToCart={() => console.log("🛒 Añadido al carrito:", p.nombre)}
+            onPress={() => setSelectedProduct(p)} // Mostrar modal al tocar
+          />
+        ))}
+      </View>
+
+      {selectedProduct && (
+        <ProductoPopup
+          isVisible={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          producto={{
+            id: selectedProduct.urlProducto,
+            imageUrl: selectedProduct.imagen,
+            title: selectedProduct.nombre,
+            description: `Precio: $${selectedProduct.precio.toFixed(2)}${selectedProduct.porcentajeDescuento ? ` (${selectedProduct.porcentajeDescuento}% OFF)` : ""}`,
+            price: `$${selectedProduct.precio.toFixed(2)}`,
+            link: selectedProduct.urlProducto,
+          }}
+        />
       )}
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#fff',
-    flexGrow: 1,
+    backgroundColor: "#fefefe",
   },
-  image: {
-    width: '100%',
-    height: 250,
-    resizeMode: 'contain',
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  nombre: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  precio: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  estado: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  extra: {
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-    paddingTop: 12,
-  },
-  boton: {
-    marginTop: 16,
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   error: {
-    fontSize: 18,
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 50,
+    color: "red",
+    marginTop: 10,
+    textAlign: "center",
+  },
+  noResults: {
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 16,
+    color: "#888",
   },
 });
+
+export default RopaScreen;
