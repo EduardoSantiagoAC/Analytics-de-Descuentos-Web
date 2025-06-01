@@ -39,6 +39,7 @@ import React, { useState, useEffect } from "react";
    }
 
    const BACKEND_URL = "http://localhost:3000";
+   const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
    const capitalizarCategoria = (cat: string): ProductCategory => {
      if (!cat) return "Ropa";
@@ -63,15 +64,15 @@ import React, { useState, useEffect } from "react";
      }, []);
 
      const convertirProducto = (p: any): Product => {
-       console.log("📋 Producto crudo:", p);
+       console.log("📋 Producto crudo:", JSON.stringify(p, null, 2));
        return {
-         id: p.urlProducto || Math.random().toString(),
-         title: p.nombre || "Sin título",
-         image: p.imagen || "https://via.placeholder.com/150",
-         oldPrice: Number(p.precioOriginal) || Number(p.precio) || 0,
-         price: Number(p.precio) || 0,
-         discount: Number(p.porcentajeDescuento) || 0,
-         category: capitalizarCategoria(p.categoria || ""),
+         id: p.urlProducto || p._id || Math.random().toString(),
+         title: p.nombre || p.title || "Sin título",
+         image: p.imagen || p.image || DEFAULT_IMAGE,
+         oldPrice: Number(p.precioOriginal) || Number(p.oldPrice) || Number(p.precio) || Number(p.price) || 0,
+         price: Number(p.precio) || Number(p.price) || 0,
+         discount: Number(p.porcentajeDescuento) || Number(p.discount) || 0,
+         category: capitalizarCategoria(p.categoria || p.category || ""),
        };
      };
 
@@ -86,12 +87,12 @@ import React, { useState, useEffect } from "react";
          console.log("📊 Respuesta completa de la API:", JSON.stringify(data, null, 2));
          if (!response.ok) throw new Error(data.error || "Error al cargar productos");
          const productosConvertidos = (data.productos || []).map(convertirProducto);
-         console.log("📋 Productos convertidos:", productosConvertidos);
+         console.log("📋 Productos convertidos:", JSON.stringify(productosConvertidos, null, 2));
          setProductos(productosConvertidos.length ? productosConvertidos : [
            {
              id: "1",
              title: "Producto de Prueba",
-             image: "https://via.placeholder.com/150",
+             image: DEFAULT_IMAGE,
              oldPrice: 200,
              price: 150,
              discount: 25,
@@ -105,7 +106,7 @@ import React, { useState, useEffect } from "react";
            {
              id: "1",
              title: "Producto de Prueba",
-             image: "https://via.placeholder.com/150",
+             image: DEFAULT_IMAGE,
              oldPrice: 200,
              price: 150,
              discount: 25,
@@ -135,12 +136,12 @@ import React, { useState, useEffect } from "react";
          console.log("📊 Respuesta completa de la API (búsqueda):", JSON.stringify(data, null, 2));
          if (!response.ok) throw new Error(data.error || "Error al buscar productos");
          const productosConvertidos = (data.productos || []).map(convertirProducto);
-         console.log("📋 Productos convertidos (búsqueda):", productosConvertidos);
+         console.log("📋 Productos convertidos (búsqueda):", JSON.stringify(productosConvertidos, null, 2));
          setProductos(productosConvertidos.length ? productosConvertidos : [
            {
              id: "1",
              title: "Producto de Prueba",
-             image: "https://via.placeholder.com/150",
+             image: DEFAULT_IMAGE,
              oldPrice: 200,
              price: 150,
              discount: 25,
@@ -154,7 +155,7 @@ import React, { useState, useEffect } from "react";
            {
              id: "1",
              title: "Producto de Prueba",
-             image: "https://via.placeholder.com/150",
+             image: DEFAULT_IMAGE,
              oldPrice: 200,
              price: 150,
              discount: 25,
@@ -182,7 +183,7 @@ import React, { useState, useEffect } from "react";
          ? productos
          : productos.filter((product) => product.category === activeCategory);
 
-     console.log("📋 Productos a renderizar:", filteredProducts);
+     console.log("📋 Productos a renderizar:", JSON.stringify(filteredProducts, null, 2));
 
      return (
        <View style={styles.container}>
@@ -215,13 +216,16 @@ import React, { useState, useEffect } from "react";
            data={filteredProducts}
            keyExtractor={(item) => item.id}
            numColumns={2}
-           renderItem={({ item }) => (
-             <ProductCard
-               product={item}
-               onAddToCart={añadirAlCarrito}
-               onPress={() => setSelectedProduct(item)}
-             />
-           )}
+           renderItem={({ item }) => {
+             console.log("📋 Renderizando ProductCard para:", JSON.stringify(item, null, 2));
+             return (
+               <ProductCard
+                 product={item}
+                 onAddToCart={añadirAlCarrito}
+                 onPress={() => setSelectedProduct(item)}
+               />
+             );
+           }}
            contentContainerStyle={styles.productsWrapper}
          />
 
