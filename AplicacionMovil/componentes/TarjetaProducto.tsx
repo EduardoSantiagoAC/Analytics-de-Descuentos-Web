@@ -14,23 +14,24 @@ interface Product {
 interface Props {
   product: Product;
   onAddToCart?: (product: Product) => void;
+  onPress?: () => void;
 }
 
-const ProductCard: React.FC<Props> = ({ product, onAddToCart }) => {
+const ProductCard: React.FC<Props> = ({ product, onAddToCart, onPress }) => {
   const [expandido, setExpandido] = useState(false);
 
   const precioConDescuento =
     product.discount > 0 ? product.price * (1 - product.discount / 100) : product.price;
 
   return (
-    <TouchableOpacity onPress={() => setExpandido(!expandido)} style={styles.card}>
+    <TouchableOpacity onPress={() => { setExpandido(!expandido); onPress?.(); }} style={styles.card}>
       <Image source={{ uri: product.image }} style={styles.image} />
       <Text style={styles.title}>{product.title}</Text>
 
       <View style={styles.priceRow}>
-        <Text style={styles.discountedPrice}>${precioConDescuento.toFixed(2)}</Text>
+        <Text style={styles.discountedPrice}>${product.price.toFixed(2)}</Text>
         {product.discount > 0 && (
-          <Text style={styles.oldPrice}>${product.price.toFixed(2)}</Text>
+          <Text style={styles.oldPrice}>${product.oldPrice.toFixed(2)}</Text>
         )}
       </View>
 

@@ -62,24 +62,28 @@ const HomeScreen = () => {
     buscarProductosInicial();
   }, []);
 
-  const convertirProducto = (p: any): Product => ({
-    id: p.urlProducto || Math.random().toString(),
-    title: p.nombre || "Sin título",
-    image: p.imagen || "https://via.placeholder.com/150",
-    oldPrice: p.precioOriginal || p.precio || 0,
-    price: p.precio || 0,
-    discount: p.porcentajeDescuento || 0,
-    category: capitalizarCategoria(p.categoria),
-  });
+  const convertirProducto = (p: any): Product => {
+    console.log("Producto recibido:", p); // Log para depurar
+    return {
+      id: p.urlProducto || Math.random().toString(),
+      title: p.nombre || "Sin título",
+      image: p.imagen || "https://via.placeholder.com/150",
+      oldPrice: p.precioOriginal || p.precio || 0,
+      price: p.precio || 0,
+      discount: p.porcentajeDescuento || 0,
+      category: capitalizarCategoria(p.categoria),
+    };
+  };
 
   const buscarProductosInicial = async () => {
     setCargando(true);
     setError("");
     try {
-      const response = await fetch(`${BACKEND_URL}/mercado-libre/buscar?q=ofertas&max=10`);
+      const response = await fetch(`${BACKEND_URL}/mercado-libre/buscar?q=precio&max=10`);
       const data = await response.json();
+      console.log("Respuesta de la API (inicial):", data); // Log para depurar
       if (!response.ok) throw new Error(data.error || "Error al cargar productos");
-      const productosConvertidos = data.productos.map(convertirProducto);
+      const productosConvertidos = (data.productos || []).map(convertirProducto);
       setProductos(productosConvertidos);
     } catch (err: any) {
       console.error("❌ Error cargando productos iniciales:", err.message);
@@ -102,10 +106,9 @@ const HomeScreen = () => {
         `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(termino)}&max=10`
       );
       const data = await response.json();
-
+      console.log("Respuesta de la API (búsqueda):", data); // Log para depurar
       if (!response.ok) throw new Error(data.error || "Error al buscar productos");
-
-      const productosConvertidos = data.productos.map(convertirProducto);
+      const productosConvertidos = (data.productos || []).map(convertirProducto);
       setProductos(productosConvertidos);
     } catch (err: any) {
       console.error("❌ Error en búsqueda:", err.message);
@@ -130,6 +133,8 @@ const HomeScreen = () => {
     activeCategory === "Home"
       ? productos
       : productos.filter((product) => product.category === activeCategory);
+
+  console.log("Productos a renderizar:", filteredProducts); // Log para depurar
 
   return (
     <View style={styles.container}>

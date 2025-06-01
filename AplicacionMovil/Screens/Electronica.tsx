@@ -32,11 +32,10 @@ const ElectronicaScreen = () => {
     try {
       const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=electrónica&max=10`);
       const data = await response.json();
-
+      console.log("Respuesta de la API (electrónica):", data); // Log para depurar
       if (!response.ok) {
         throw new Error(data.error || "Error al buscar productos");
       }
-
       setProductos(data.productos || []);
     } catch (err: any) {
       setError("Error al cargar productos de electrónica");
@@ -45,6 +44,8 @@ const ElectronicaScreen = () => {
       setCargando(false);
     }
   };
+
+  console.log("Productos a renderizar (electrónica):", productos); // Log para depurar
 
   return (
     <ScrollView style={styles.container}>
@@ -68,7 +69,7 @@ const ElectronicaScreen = () => {
               category: "Electrónica",
             }}
             onAddToCart={() => console.log("🛒 Añadido al carrito:", p.nombre)}
-            onPress={() => setSelectedProduct(p)} // Mostrar modal al tocar
+            onPress={() => setSelectedProduct(p)}
           />
         ))}
       </View>

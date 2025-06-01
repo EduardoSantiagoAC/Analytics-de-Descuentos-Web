@@ -32,11 +32,10 @@ const BusquedaScreen = () => {
     try {
       const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`);
       const data = await response.json();
-
+      console.log("Respuesta de la API (búsqueda):", data); // Log para depurar
       if (!response.ok) {
         throw new Error(data.error || "Error al buscar productos");
       }
-
       setResultados(data.productos || []);
     } catch (err: any) {
       setError("Error al buscar productos");
@@ -47,6 +46,8 @@ const BusquedaScreen = () => {
   };
 
   const filteredResults = soloOfertas ? resultados.filter(p => p.esOferta) : resultados;
+
+  console.log("Resultados a renderizar:", filteredResults); // Log para depurar
 
   return (
     <View style={styles.container}>
@@ -85,7 +86,7 @@ const BusquedaScreen = () => {
               category: p.categoria || "General",
             }}
             onAddToCart={() => console.log("🛒 Añadido al carrito:", p.nombre)}
-            onPress={() => setSelectedProduct(p)} // Mostrar modal al tocar
+            onPress={() => setSelectedProduct(p)}
           />
         ))}
       </ScrollView>
