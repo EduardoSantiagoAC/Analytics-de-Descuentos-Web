@@ -76,7 +76,7 @@ const HomeScreen = () => {
     setCargando(true);
     setError("");
     try {
-      const response = await fetch(`${BACKEND_URL}/mercado-libre/buscar?q=descuentos&max=10`);
+      const response = await fetch(`${BACKEND_URL}/mercado-libre/buscar?q=ofertas&max=10`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Error al cargar productos");
       const productosConvertidos = data.productos.map(convertirProducto);
@@ -166,7 +166,7 @@ const HomeScreen = () => {
           <ProductCard
             product={item}
             onAddToCart={añadirAlCarrito}
-            onPress={() => setSelectedProduct(item)} // Mostrar modal
+            onPress={() => setSelectedProduct(item)}
           />
         )}
         contentContainerStyle={styles.productsWrapper}
@@ -182,7 +182,7 @@ const HomeScreen = () => {
             title: selectedProduct.title,
             description: `Precio: $${selectedProduct.price.toFixed(2)}${selectedProduct.discount ? ` (${selectedProduct.discount}% OFF)` : ""}`,
             price: `$${selectedProduct.price.toFixed(2)}`,
-            link: "https://www.mercadolibre.com.mx", // Ajustar según el producto
+            link: "https://www.mercadolibre.com.mx",
           }}
         />
       )}
