@@ -23,42 +23,44 @@ async function scrapeMercadoLibre(busqueda) {
     return Array.from(items).map(item => {
       const nombre = item.querySelector('.ui-search-item__title')?.innerText || '';
       const imagen = item.querySelector('img')?.src || '';
-
-      const precioDescuentoTexto = item.querySelector('.price-tag-fraction')?.innerText || '';
-      const precioOriginalTexto = item.querySelector('.ui-search-price__subtitles .andes-money-amount__fraction')?.innerText || '';
-
       const url = item.querySelector('a')?.href || '';
+
+      const precioActualTexto = item.querySelector('.ui-search-price__second-line .andes-money-amount__fraction')?.innerText || '';
+      const precioOriginalTexto = item.querySelector('.ui-search-price__original .andes-money-amount__fraction')?.innerText || '';
 
       return {
         nombre,
         imagen,
-        precioDescuentoTexto,
-        precioOriginalTexto,
         url,
+        precioActualTexto,
+        precioOriginalTexto,
       };
     });
   });
 
-  const productosFormateados = productos.map(producto => {
-    const precioConDescuento = extraerPrecio(producto.precioDescuentoTexto);
-    const precioOriginal = extraerPrecio(producto.precioOriginalTexto);
+  const productosFormateados = productos
+    .filter(producto => producto.precioActualTexto)
+    .map(producto => {
+      const precio = extraerPrecio(producto.precioActualTexto);
+      const precioOriginal = extraerPrecio(producto.precioOriginalTexto);
 
-    let porcentajeDescuento = null;
+      let porcentajeDescuento = 0;
+      if (precioOriginal && precio && precioOriginal > precio) {
+        porcentajeDescuento = Math.round(((precioOriginal - precio) / precioOriginal) * 100);
+      }
 
-    if (precioOriginal && precioConDescuento && precioOriginal > precioConDescuento) {
-      porcentajeDescuento = Math.round(((precioOriginal - precioConDescuento) / precioOriginal) * 100);
-    }
-
-    return {
-      nombre: producto.nombre,
-      imagen: producto.imagen,
-      url: producto.url,
-      precio: producto.precioDescuentoTexto, // Campo original para compatibilidad
-      precioOriginal,
-      precioConDescuento,
-      porcentajeDescuento,
-    };
-  });
+      return {
+        nombre: producto.nombre,
+        imagen: producto.imagen,
+        urlProducto: producto.url,
+        precio,
+        precioOriginal: precioOriginal || null,
+        porcentajeDescuento,
+        estadoDescuento: precioOriginal && precioOriginal > precio ? 'Descuento' : 'Normal',
+        esOferta: porcentajeDescuento > 10,
+        tienda: 'MercadoLibre',
+      };
+    });
 
   await browser.close();
   return productosFormateados;
