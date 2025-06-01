@@ -38,7 +38,7 @@ interface Product {
   category: ProductCategory;
 }
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "http://10.0.2.2:3000"; // Cambiado para emulador Android
 
 const capitalizarCategoria = (cat: string): ProductCategory => {
   if (!cat) return "Ropa";
@@ -63,15 +63,15 @@ const HomeScreen = () => {
   }, []);
 
   const convertirProducto = (p: any): Product => {
-    console.log("Producto recibido:", p); // Log para depurar
+    console.log("Producto crudo:", p); // Log para depurar
     return {
       id: p.urlProducto || Math.random().toString(),
       title: p.nombre || "Sin título",
       image: p.imagen || "https://via.placeholder.com/150",
-      oldPrice: p.precioOriginal || p.precio || 0,
-      price: p.precio || 0,
-      discount: p.porcentajeDescuento || 0,
-      category: capitalizarCategoria(p.categoria),
+      oldPrice: Number(p.precioOriginal) || Number(p.precio) || 0,
+      price: Number(p.precio) || 0,
+      discount: Number(p.porcentajeDescuento) || 0,
+      category: capitalizarCategoria(p.categoria || ""),
     };
   };
 
@@ -79,14 +79,16 @@ const HomeScreen = () => {
     setCargando(true);
     setError("");
     try {
-      const response = await fetch(`${BACKEND_URL}/mercado-libre/buscar?q=precio&max=10`);
+      const response = await fetch(`${BACKEND_URL}/mercado-libre/buscar?q=ofertas&max=10`);
+      console.log("Estado de la respuesta:", response.status, response.ok); // Log
       const data = await response.json();
-      console.log("Respuesta de la API (inicial):", data); // Log para depurar
+      console.log("Respuesta completa de la API:", data); // Log
       if (!response.ok) throw new Error(data.error || "Error al cargar productos");
       const productosConvertidos = (data.productos || []).map(convertirProducto);
+      console.log("Productos convertidos:", productosConvertidos); // Log
       setProductos(productosConvertidos);
     } catch (err: any) {
-      console.error("❌ Error cargando productos iniciales:", err.message);
+      console.error("❌ Error cargando productos iniciales:", err);
       setError("No se pudieron cargar los productos iniciales.");
     } finally {
       setCargando(false);
@@ -105,13 +107,15 @@ const HomeScreen = () => {
       const response = await fetch(
         `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(termino)}&max=10`
       );
+      console.log("Estado de la respuesta (búsqueda):", response.status, response.ok); // Log
       const data = await response.json();
-      console.log("Respuesta de la API (búsqueda):", data); // Log para depurar
+      console.log("Respuesta completa de la API (búsqueda):", data); // Log
       if (!response.ok) throw new Error(data.error || "Error al buscar productos");
       const productosConvertidos = (data.productos || []).map(convertirProducto);
+      console.log("Productos convertidos (búsqueda):", productosConvertidos); // Log
       setProductos(productosConvertidos);
     } catch (err: any) {
-      console.error("❌ Error en búsqueda:", err.message);
+      console.error("❌ Error en búsqueda:", err);
       setError("No se pudieron cargar los productos.");
     } finally {
       setCargando(false);
@@ -134,7 +138,7 @@ const HomeScreen = () => {
       ? productos
       : productos.filter((product) => product.category === activeCategory);
 
-  console.log("Productos a renderizar:", filteredProducts); // Log para depurar
+  console.log("Productos a renderizar:", filteredProducts); // Log final
 
   return (
     <View style={styles.container}>
@@ -158,7 +162,7 @@ const HomeScreen = () => {
             <PromoBanner />
             <AlertCard />
             {cargando && <ActivityIndicator size="large" color="#6200ee" />}
-            {error !== "" && <Text style={styles.errorText}>{error}</Text>}
+            {error && <Text style={styles.errorText}>{error}</Text>}
             {!cargando && !error && filteredProducts.length === 0 && (
               <Text style={styles.noProducts}>No hay productos disponibles.</Text>
             )}

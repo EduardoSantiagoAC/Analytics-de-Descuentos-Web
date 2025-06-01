@@ -30,22 +30,24 @@ const RopaScreen = () => {
     setError("");
 
     try {
-      const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=ropa&max=10`);
+      const response = await fetch(`http://10.0.2.2:3000/mercado-libre/buscar?q=ropa&max=10`);
+      console.log("Estado de la respuesta (ropa):", response.status, response.ok); // Log
       const data = await response.json();
-      console.log("Respuesta de la API (ropa):", data); // Log para depurar
+      console.log("Respuesta completa de la API (ropa):", data); // Log
       if (!response.ok) {
         throw new Error(data.error || "Error al buscar productos");
       }
       setProductos(data.productos || []);
+      console.log("Productos establecidos (ropa):", data.productos || []); // Log
     } catch (err: any) {
+      console.error("❌ Error al cargar productos de ropa:", err);
       setError("Error al cargar productos de ropa");
-      console.error(err);
     } finally {
       setCargando(false);
     }
   };
 
-  console.log("Productos a renderizar (ropa):", productos); // Log para depurar
+  console.log("Productos a renderizar (ropa):", productos); // Log final
 
   return (
     <ScrollView style={styles.container}>
@@ -63,9 +65,9 @@ const RopaScreen = () => {
               id: index.toString(),
               title: p.nombre,
               image: p.imagen || "https://via.placeholder.com/100x100.png?text=Producto",
-              oldPrice: p.precioOriginal || p.precio,
-              price: p.precio,
-              discount: p.porcentajeDescuento || 0,
+              oldPrice: Number(p.precioOriginal) || Number(p.precio),
+              price: Number(p.precio),
+              discount: Number(p.porcentajeDescuento) || 0,
               category: "Ropa",
             }}
             onAddToCart={() => console.log("🛒 Añadido al carrito:", p.nombre)}

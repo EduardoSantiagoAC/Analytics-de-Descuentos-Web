@@ -30,16 +30,18 @@ const BusquedaScreen = () => {
     setError("");
 
     try {
-      const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`);
+      const response = await fetch(`http://10.0.2.2:3000/mercado-libre/buscar?q=${encodeURIComponent(busqueda)}&max=10`);
+      console.log("Estado de la respuesta (búsqueda):", response.status, response.ok); // Log
       const data = await response.json();
-      console.log("Respuesta de la API (búsqueda):", data); // Log para depurar
+      console.log("Respuesta completa de la API (búsqueda):", data); // Log
       if (!response.ok) {
         throw new Error(data.error || "Error al buscar productos");
       }
       setResultados(data.productos || []);
+      console.log("Resultados establecidos:", data.productos || []); // Log
     } catch (err: any) {
+      console.error("❌ Error al buscar productos:", err);
       setError("Error al buscar productos");
-      console.error(err);
     } finally {
       setCargando(false);
     }
@@ -47,7 +49,7 @@ const BusquedaScreen = () => {
 
   const filteredResults = soloOfertas ? resultados.filter(p => p.esOferta) : resultados;
 
-  console.log("Resultados a renderizar:", filteredResults); // Log para depurar
+  console.log("Resultados a renderizar:", filteredResults); // Log final
 
   return (
     <View style={styles.container}>
@@ -80,9 +82,9 @@ const BusquedaScreen = () => {
               id: index.toString(),
               title: p.nombre,
               image: p.imagen || "https://via.placeholder.com/100x100.png?text=Producto",
-              oldPrice: p.precioOriginal || p.precio,
-              price: p.precio,
-              discount: p.porcentajeDescuento || 0,
+              oldPrice: Number(p.precioOriginal) || Number(p.precio),
+              price: Number(p.precio),
+              discount: Number(p.porcentajeDescuento) || 0,
               category: p.categoria || "General",
             }}
             onAddToCart={() => console.log("🛒 Añadido al carrito:", p.nombre)}
