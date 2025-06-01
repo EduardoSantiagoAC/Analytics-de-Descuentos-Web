@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Button } from 'react-native';
 
+
+
 export default function ProductoItem({ producto }) {
   const [expandido, setExpandido] = useState(false);
 

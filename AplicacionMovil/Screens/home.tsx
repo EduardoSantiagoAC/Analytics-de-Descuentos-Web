@@ -1,3 +1,9 @@
+/*
+Este archivo es la creacion principal de nuestro producto desde donde se entra en el app.tsx
+Aqui se manejan las navegaciones y como muchos componentes son usados por lo que es crucial detallar
+cuales son los cambios realizados al momento de modificar por que un mal cambio a este podria romper la entrada de la app
+y posiblemente hacer que la misma no cargue 
+*/
 import React, { useState, useEffect } from "react";
 import {
   FlatList,
@@ -17,6 +23,7 @@ import PromoBanner from "../componentes/promo";
 import AlertCard from "../componentes/Alertas";
 import ProductCard from "../componentes/TarjetaProducto";
 
+// tipos de la ropa 
 type RootStackParamList = {
   Home: undefined;
   Ropa: undefined;
@@ -36,7 +43,18 @@ interface Product {
   category: ProductCategory;
 }
 
+// backend simulado
 const BACKEND_URL = "http://192.168.56.1:3000";
+
+// Función para capitalizar y normalizar las categorías
+const capitalizarCategoria = (cat: string): ProductCategory => {
+  if (!cat) return "Ropa";
+  const normalizado = cat.trim().toLowerCase();
+  if (normalizado === "ropa") return "Ropa";
+  if (normalizado === "electrónica" || normalizado === "electronica") return "Electrónica";
+  if (normalizado === "hogar") return "Hogar";
+  return "Ropa"; // fallback
+};
 
 const HomeScreen = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -57,7 +75,7 @@ const HomeScreen = () => {
     oldPrice: p.precioOriginal || p.precio || 0,
     price: p.precio || 0,
     discount: p.porcentajeDescuento || 0,
-    category: (p.categoria as ProductCategory) || "Ropa",
+    category: capitalizarCategoria(p.categoria),
   });
 
   const buscarProductosInicial = async () => {

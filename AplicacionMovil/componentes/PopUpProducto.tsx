@@ -2,14 +2,15 @@ import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from "react-native";
 import Modal from "react-native-modal";
 
-// Definimos la interfaz de cosas que tendra el producto
-interface Producto {
+export interface Producto {
+  id: any;
   imageUrl: string;
   title: string;
   description: string;
-  price?: string;
+  price?: any;
   link: string;
 }
+
 // 2 modos se ve o no se ve 
 interface Props {
   isVisible: boolean;

@@ -2,9 +2,9 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import ProductCard from "../componentes/TarjetaProducto";
-import { Product } from "../componentes/TarjetaProducto";
+import { Producto } from "../componentes/PopUpProducto";
 
-const electronicaProductos: Product[] = [
+const electronicaProductos: Producto[] = [
   {
     id: 3,
     title: "Auriculares Bluetooth",
