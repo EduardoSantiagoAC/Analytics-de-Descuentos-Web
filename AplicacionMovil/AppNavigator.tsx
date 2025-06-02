@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { NavigationContainer, useNavigation } from "@react-navigation/native";
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,7 +23,7 @@ const MainTabs = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName={usuario ? "Perfil" : "Home"} // Si el usuario está autenticado, inicia en Perfil
+      initialRouteName={usuario ? "Perfil" : "Home"} // Inicia en Perfil si el usuario está autenticado
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = "home";
@@ -92,28 +92,13 @@ const MainTabs = () => {
 
 const AppNavigator = () => {
   const { usuario, isLoading } = useAuth();
-  const navigation = useNavigation();
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (usuario) {
-        // Si el usuario está autenticado, redirige a Main con la pestaña Perfil activa
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Main", params: { screen: "Perfil" } }],
-        });
-      } else {
-        // Si no está autenticado, redirige a Login
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Login" }],
-        });
-      }
-    }
-  }, [usuario, isLoading, navigation]);
 
   if (isLoading) {
-    return null; // O un componente de carga
+    return (
+      <View>
+        <Text>Cargando...</Text> {/* Mostrar algo mientras carga */}
+      </View>
+    ); // Mostrar un indicador de carga
   }
 
   return (
