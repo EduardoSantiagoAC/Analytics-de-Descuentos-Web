@@ -10,6 +10,7 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Nuevo estado para evitar doble envío
   const { register } = useAuth();
   const navigation = useNavigation();
 
@@ -33,15 +34,16 @@ const RegisterScreen = () => {
   };
 
   const handleRegister = async () => {
+    if (isSubmitting) return; // Evita múltiples envíos
+    setIsSubmitting(true);
+
     try {
-      // Crear FormData para enviar los datos
       const formData = new FormData();
       formData.append("nombre", nombre);
       formData.append("email", email);
       formData.append("password", password);
 
       if (foto) {
-        // Convertir la imagen a Blob
         const response = await fetch(foto);
         const blob = await response.blob();
         formData.append("foto", blob, "profile.jpg");
@@ -53,7 +55,6 @@ const RegisterScreen = () => {
       const response = await fetch("http://localhost:3000/auth/register", {
         method: "POST",
         body: formData,
-        // No establecer Content-Type manualmente; fetch lo hace automáticamente
       });
 
       console.log("📥 Respuesta del servidor:", response.status, response.statusText);
@@ -64,13 +65,15 @@ const RegisterScreen = () => {
       }
 
       const data = await response.json();
-      await register(nombre, email, password); // Sincronizar con AuthContext
+      await register(data.token, data.usuario); // Ajuste: Usar el token y usuario devuelto por el backend
       Alert.alert("Éxito", "Registro exitoso", [
         { text: "OK", onPress: () => navigation.navigate("Perfil") },
       ]);
-    } catch (error: any) {
+    } catch (error) {
       console.error("❌ Error en registro:", error);
       Alert.alert("Error", error.message);
+    } finally {
+      setIsSubmitting(false); // Rehabilitar el botón
     }
   };
 
@@ -105,7 +108,12 @@ const RegisterScreen = () => {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title="Registrarse" onPress={handleRegister} color={theme.colors.primary} />
+      <Button
+        title="Registrarse"
+        onPress={handleRegister}
+        color={theme.colors.primary}
+        disabled={isSubmitting} // Deshabilitar mientras se procesa
+      />
       <Button
         title="¿Ya tienes cuenta? Inicia sesión"
         onPress={() => navigation.navigate("Login")}
