@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Product {
   id: string;
@@ -19,6 +20,35 @@ const CarritoContext = createContext<CarritoContextType | undefined>(undefined);
 
 export const CarritoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [carrito, setCarrito] = useState<Product[]>([]);
+
+  useEffect(() => {
+    // Cargar el carrito desde AsyncStorage al iniciar
+    const loadCarrito = async () => {
+      try {
+        const storedCarrito = await AsyncStorage.getItem("carrito");
+        if (storedCarrito) {
+          setCarrito(JSON.parse(storedCarrito));
+          console.log("🛒 Carrito cargado desde AsyncStorage:", storedCarrito);
+        }
+      } catch (error) {
+        console.error("❌ Error cargando carrito desde AsyncStorage:", error);
+      }
+    };
+    loadCarrito();
+  }, []);
+
+  useEffect(() => {
+    // Guardar el carrito en AsyncStorage cada vez que cambie
+    const saveCarrito = async () => {
+      try {
+        await AsyncStorage.setItem("carrito", JSON.stringify(carrito));
+        console.log("🛒 Carrito guardado en AsyncStorage:", JSON.stringify(carrito));
+      } catch (error) {
+        console.error("❌ Error guardando carrito en AsyncStorage:", error);
+      }
+    };
+    saveCarrito();
+  }, [carrito]);
 
   const addToCarrito = (product: Omit<Product, "quantity">) => {
     setCarrito((prev) => {
