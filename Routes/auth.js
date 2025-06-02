@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const cloudinary = require("../cloudinary");
+const cloudinary = require("cloudinary").v2; // Importa directamente desde la librería
 const upload = require("../multer");
 const Usuario = require("../Models/Usuario");
 
@@ -28,16 +28,9 @@ router.post("/register", upload.single("foto"), async (req, res) => {
     let fotoUrl = "https://randomuser.me/api/portraits/lego/1.jpg"; // Valor por defecto
     if (req.file) {
       console.log("📤 Subiendo foto a Cloudinary...");
-      const result = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "perfiles" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        );
-        stream.end(req.file.buffer);
-      });
+      const base64Image = req.file.buffer.toString("base64");
+      const dataUri = `data:${req.file.mimetype};base64,${base64Image}`;
+      const result = await cloudinary.uploader.upload(dataUri, { folder: "perfiles" });
       fotoUrl = result.secure_url;
       console.log("✅ Foto subida, URL:", fotoUrl);
     }
@@ -135,16 +128,9 @@ router.post("/update-photo", upload.single("foto"), async (req, res) => {
     }
 
     // Subir nueva foto a Cloudinary
-    const result = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "perfiles" },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
-    });
+    const base64Image = req.file.buffer.toString("base64");
+    const dataUri = `data:${req.file.mimetype};base64,${base64Image}`;
+    const result = await cloudinary.uploader.upload(dataUri, { folder: "perfiles" });
 
     // Actualizar la URL de la foto en la base de datos
     usuario.foto = result.secure_url;
@@ -153,7 +139,7 @@ router.post("/update-photo", upload.single("foto"), async (req, res) => {
     res.json({ message: "Foto actualizada", foto: usuario.foto });
   } catch (error) {
     console.error("❌ Error actualizando foto:", error);
-    res.status(500).json({ error: "Error al actualizar foto" });
+    res.status(500).json({ error: "Error al actualizar foto", details: error.message });
   }
 });
 
