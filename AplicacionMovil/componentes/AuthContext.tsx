@@ -25,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Cargar datos del usuario y token al iniciar la app
     const loadAuthData = async () => {
       try {
         const storedToken = await AsyncStorage.getItem("token");
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error("Error cargando datos de autenticación:", error);
       } finally {
-        setIsLoading(false); // Asegúrate de que siempre se desactive
+        setIsLoading(false);
       }
     };
     loadAuthData();
