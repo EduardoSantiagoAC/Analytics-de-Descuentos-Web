@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // Cargar token al iniciar
+  // Cargar token al iniciar para autentificacion
   useEffect(() => {
     const loadAuthData = async () => {
       try {
