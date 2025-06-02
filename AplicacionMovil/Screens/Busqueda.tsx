@@ -24,6 +24,20 @@ const BusquedaScreen = () => {
   const [soloOfertas, setSoloOfertas] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+  const asignarCategoria = (nombre: string): string => {
+    const nombreLower = nombre.toLowerCase();
+    if (nombreLower.includes("tenis") || nombreLower.includes("ropa") || nombreLower.includes("zapat") || nombreLower.includes("camis")) {
+      return "Ropa";
+    }
+    if (nombreLower.includes("samsung") || nombreLower.includes("motorola") || nombreLower.includes("laptop") || nombreLower.includes("dron") || nombreLower.includes("roku")) {
+      return "Electrónica";
+    }
+    if (nombreLower.includes("hidrolavadora") || nombreLower.includes("mueble") || nombreLower.includes("cocina")) {
+      return "Hogar";
+    }
+    return "General";
+  };
+
   const convertirProducto = (p: any): Product => {
     console.log("📋 Producto crudo:", JSON.stringify(p, null, 2));
     return {
@@ -33,7 +47,7 @@ const BusquedaScreen = () => {
       oldPrice: Number(p.precioOriginal || p.oldPrice || p.precio || p.price || 0),
       price: Number(p.precio || p.price || 0),
       discount: Number(p.porcentajeDescuento || p.discount || 0),
-      category: p.categoria || p.category || "General",
+      category: p.categoria || asignarCategoria(p.nombre || p.title || ""),
     };
   };
 
@@ -55,7 +69,6 @@ const BusquedaScreen = () => {
       const data = await response.json();
       console.log("📊 Respuesta completa de la API:", JSON.stringify(data, null, 2));
       if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
-      // Manejar respuesta como arreglo directo
       const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(convertirProducto);
       console.log("📋 Productos convertidos:", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
@@ -142,7 +155,7 @@ const BusquedaScreen = () => {
             title: selectedProduct.title,
             description: `Precio: $${selectedProduct.price.toFixed(2)}${selectedProduct.discount ? ` (${selectedProduct.discount}% OFF)` : ""}`,
             price: `$${selectedProduct.price.toFixed(2)}`,
-            link: "https://www.mercadolibre.com.mx",
+            link: selectedProduct.id, // Usar urlProducto como link
           }}
         />
       )}

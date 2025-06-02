@@ -1,4 +1,3 @@
-// component/Categorias.tsx
 import React from "react";
 import { TouchableOpacity, Text, View, StyleSheet } from "react-native";
 
@@ -27,7 +26,10 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
             styles.tab,
             activeCategory === category.key && styles.activeTab,
           ]}
-          onPress={() => onCategoryChange(category.key)}
+          onPress={() => {
+            onCategoryChange(category.key);
+            console.log(`📋 Seleccionada categoría: ${category.key}`);
+          }}
         >
           <Text
             style={[
@@ -59,9 +61,11 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: "#000",
+    fontSize: 16,
   },
   activeText: {
     color: "#fff",
+    fontWeight: "bold",
   },
 });
 
