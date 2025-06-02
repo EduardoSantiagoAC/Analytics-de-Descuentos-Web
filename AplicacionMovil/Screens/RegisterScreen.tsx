@@ -41,20 +41,22 @@ const RegisterScreen = () => {
       formData.append("password", password);
 
       if (foto) {
-        formData.append("foto", {
-          uri: foto,
-          name: "profile.jpg",
-          type: "image/jpeg",
-        } as any);
+        // Convertir la imagen a Blob
+        const response = await fetch(foto);
+        const blob = await response.blob();
+        formData.append("foto", blob, "profile.jpg");
+        console.log("📤 Enviando FormData con foto...");
+      } else {
+        console.log("📤 Enviando FormData sin foto...");
       }
 
       const response = await fetch("http://localhost:3000/auth/register", {
         method: "POST",
         body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        // No establecer Content-Type manualmente; fetch lo hace automáticamente
       });
+
+      console.log("📥 Respuesta del servidor:", response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -67,6 +69,7 @@ const RegisterScreen = () => {
         { text: "OK", onPress: () => navigation.navigate("Perfil") },
       ]);
     } catch (error: any) {
+      console.error("❌ Error en registro:", error);
       Alert.alert("Error", error.message);
     }
   };

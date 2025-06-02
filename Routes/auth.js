@@ -11,6 +11,10 @@ const JWT_SECRET = process.env.JWT_SECRET || "tu_clave_secreta_aqui";
 
 // Registro
 router.post("/register", upload.single("foto"), async (req, res) => {
+  console.log("📥 Solicitud recibida en /register");
+  console.log("Cuerpo de la solicitud:", req.body);
+  console.log("Archivo recibido:", req.file);
+
   const { nombre, email, password } = req.body;
 
   try {
@@ -23,6 +27,7 @@ router.post("/register", upload.single("foto"), async (req, res) => {
     // Subir foto a Cloudinary si se proporcionó
     let fotoUrl = "https://randomuser.me/api/portraits/lego/1.jpg"; // Valor por defecto
     if (req.file) {
+      console.log("📤 Subiendo foto a Cloudinary...");
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "perfiles" },
@@ -34,6 +39,7 @@ router.post("/register", upload.single("foto"), async (req, res) => {
         stream.end(req.file.buffer);
       });
       fotoUrl = result.secure_url;
+      console.log("✅ Foto subida, URL:", fotoUrl);
     }
 
     // Encriptar contraseña
@@ -56,7 +62,7 @@ router.post("/register", upload.single("foto"), async (req, res) => {
     res.status(201).json({ token, usuario: { id: usuario._id, nombre, email, foto: fotoUrl } });
   } catch (error) {
     console.error("❌ Error en registro:", error);
-    res.status(500).json({ error: "Error al registrar usuario" });
+    res.status(500).json({ error: "Error al registrar usuario", details: error.message });
   }
 });
 
