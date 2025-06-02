@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, TextInput, Button, ScrollView, StyleSheet, Text, ActivityIndicator, Switch } from "react-native";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
-import { theme } from "../theme/theme"; //Diseño
+import { theme } from "../theme/theme";
 
 interface Product {
   id: string;
@@ -14,7 +14,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "http://192.168.1.100:3000"; // Ajusta con tu IP
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const BusquedaScreen = () => {
@@ -143,7 +143,6 @@ const BusquedaScreen = () => {
             <ProductCard
               key={p.id}
               product={p}
-              onAddToCart={() => console.log("🛒 Añadido al carrito:", p.title)}
               onPress={() => setSelectedProduct(p)}
             />
           );

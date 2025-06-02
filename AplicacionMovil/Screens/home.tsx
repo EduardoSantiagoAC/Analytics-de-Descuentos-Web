@@ -15,7 +15,7 @@ import PromoBanner from "../componentes/promo";
 import AlertCard from "../componentes/Alertas";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
-import { theme } from "../theme/theme"; //carpeta de los diseños
+import { theme } from "../theme/theme";
 
 interface Product {
   id: string;
@@ -27,7 +27,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "http://192.168.1.100:3000"; // Ajusta con tu IP
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const HomeScreen = () => {
@@ -178,10 +178,6 @@ const HomeScreen = () => {
     console.log(`📋 Categoría activa cambiada a: ${category}`);
   };
 
-  const añadirAlCarrito = (producto: Product) => {
-    console.log("🛒 Añadido al carrito:", producto.title);
-  };
-
   const filteredProducts = activeCategory === "Home"
     ? productos
     : productos.filter(p => p.category === activeCategory);
@@ -224,7 +220,6 @@ const HomeScreen = () => {
           return (
             <ProductCard
               product={item}
-              onAddToCart={añadirAlCarrito}
               onPress={() => setSelectedProduct(item)}
             />
           );

@@ -1,11 +1,11 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import MainNavigator from './navegacion/BarraDeNaveGacion';
+import React from "react";
+import { CarritoProvider } from "./componentes/CarritoContext";
+import BottomNav from "./AppNavigator";
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <MainNavigator />
-    </NavigationContainer>
+    <CarritoProvider>
+      <BottomNav />
+    </CarritoProvider>
   );
 }

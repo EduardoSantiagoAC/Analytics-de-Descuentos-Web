@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import { theme } from "../theme/theme";
+import { useCarrito } from "../componentes/CarritoContext";
 
 interface Product {
   id: string;
@@ -18,7 +19,8 @@ interface Props {
   onPress: () => void;
 }
 
-const ProductCard: React.FC<Props> = ({ product, onAddToCart, onPress }) => {
+const ProductCard: React.FC<Props> = ({ product, onPress }) => {
+  const { addToCarrito } = useCarrito();
   console.log("📋 Props de ProductCard:", JSON.stringify(product, null, 2));
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -30,6 +32,15 @@ const ProductCard: React.FC<Props> = ({ product, onAddToCart, onPress }) => {
       useNativeDriver: true,
     }).start();
   }, [fadeAnim]);
+
+  const handleAddToCarrito = () => {
+    addToCarrito({
+      id: product.id,
+      title: product.title,
+      image: product.image,
+      price: product.price,
+    });
+  };
 
   return (
     <Animated.View style={[styles.card, theme.shadows.medium, { opacity: fadeAnim }]}>
@@ -55,7 +66,7 @@ const ProductCard: React.FC<Props> = ({ product, onAddToCart, onPress }) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => onAddToCart(product)}
+        onPress={handleAddToCarrito}
       >
         <Text style={styles.addButtonText}>Añadir al carrito</Text>
       </TouchableOpacity>
