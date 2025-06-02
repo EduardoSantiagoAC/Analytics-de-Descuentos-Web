@@ -1,24 +1,42 @@
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, Button } from "react-native";
 import { theme } from "../theme/theme";
+import { useAuth } from "../componentes/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 
 const PerfilScreen = () => {
-  const usuario = {
-    nombre: "Juan Pérez",
-    email: "juan.perez@example.com",
-    foto: "https://randomuser.me/api/portraits/men/1.jpg",
+  const { user, logout } = useAuth();
+  const navigation = useNavigation();
+
+  const handleLogout = async () => {
+    await logout();
+    navigation.navigate("Login");
   };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.error}>Por favor, inicia sesión para ver tu perfil.</Text>
+        <Button
+          title="Iniciar Sesión"
+          onPress={() => navigation.navigate("Login")}
+          color={theme.colors.primary}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: usuario.foto }} style={styles.foto} />
-      <Text style={styles.nombre}>{usuario.nombre}</Text>
-      <Text style={styles.email}>{usuario.email}</Text>
+      <Image source={{ uri: user.foto }} style={styles.foto} />
+      <Text style={styles.nombre}>{user.nombre}</Text>
+      <Text style={styles.email}>{user.email}</Text>
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Información del Perfil</Text>
         <Text style={styles.infoText}>Miembro desde: Enero 2025</Text>
         <Text style={styles.infoText}>Pedidos realizados: 5</Text>
       </View>
+      <Button title="Cerrar Sesión" onPress={handleLogout} color={theme.colors.error} />
     </View>
   );
 };
@@ -56,6 +74,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     width: "100%",
     ...theme.shadows.medium,
+    marginBottom: theme.spacing.lg,
   },
   infoTitle: {
     fontSize: theme.fontSizes.large,
@@ -68,6 +87,12 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontFamily: theme.fonts.regular,
     marginBottom: theme.spacing.xs,
+  },
+  error: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.error,
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
   },
 });
 
