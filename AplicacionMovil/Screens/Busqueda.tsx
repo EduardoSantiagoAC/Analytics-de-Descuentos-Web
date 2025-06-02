@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, TextInput, Button, ScrollView, StyleSheet, Text, ActivityIndicator, Switch } from "react-native";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
-import { theme } from "../theme/theme";
+import { theme } from "../theme/theme"; //Diseño
 
 interface Product {
   id: string;

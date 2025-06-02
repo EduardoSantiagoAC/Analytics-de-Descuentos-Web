@@ -15,7 +15,7 @@ import PromoBanner from "../componentes/promo";
 import AlertCard from "../componentes/Alertas";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
-import { theme } from "../theme/theme";
+import { theme } from "../theme/theme"; //carpeta de los diseños
 
 interface Product {
   id: string;
