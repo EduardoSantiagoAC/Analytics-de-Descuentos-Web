@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { theme } from "../theme/theme";
 
 interface Product {
   id: string;
@@ -21,7 +22,7 @@ const ProductCard: React.FC<Props> = ({ product, onAddToCart, onPress }) => {
   console.log("📋 Props de ProductCard:", JSON.stringify(product, null, 2));
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity style={[styles.card, theme.shadows.medium]} onPress={onPress}>
       <Image
         source={{ uri: product.image }}
         style={styles.image}
@@ -53,53 +54,57 @@ const ProductCard: React.FC<Props> = ({ product, onAddToCart, onPress }) => {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    margin: 8,
-    padding: 10,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
+    margin: theme.spacing.sm,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.medium,
     alignItems: "center",
   },
   image: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     resizeMode: "contain",
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
   },
   info: {
     flex: 1,
     alignItems: "center",
   },
   title: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.medium,
     textAlign: "center",
-    marginBottom: 4,
-    color: "#333",
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.regular,
   },
   price: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.large,
     fontWeight: "bold",
-    color: "#6200ee",
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.bold,
   },
   oldPrice: {
-    fontSize: 12,
+    fontSize: theme.fontSizes.small,
     textDecorationLine: "line-through",
-    color: "#888",
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular,
   },
   discount: {
-    fontSize: 12,
-    color: "#e91e63",
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.discount,
+    fontFamily: theme.fonts.medium,
   },
   addButton: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: "#6200ee",
-    borderRadius: 5,
+    marginTop: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.secondary,
+    borderRadius: theme.borderRadius.small,
   },
   addButtonText: {
-    color: "#fff",
-    fontSize: 12,
+    color: theme.colors.cardBackground,
+    fontSize: theme.fontSizes.small,
+    fontFamily: theme.fonts.medium,
   },
 });
 

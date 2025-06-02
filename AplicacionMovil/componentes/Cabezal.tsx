@@ -1,37 +1,42 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { theme } from "../theme/theme";
 
-// Componente de encabezado que muestra el título y un icono de búsqueda
 const Header = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>ECONOFY</Text>
-      <Text style={styles.subtitle}>Ahorra inteligentemente</Text>
+      <View>
+        <Text style={styles.title}>ECONOFY</Text>
+        <Text style={styles.subtitle}>Ahorra inteligentemente</Text>
+      </View>
       <TouchableOpacity>
-        <Ionicons name="search" size={24} color="black" />
+        <Ionicons name="search" size={24} color={theme.colors.textPrimary} />
       </TouchableOpacity>
     </View>
   );
 };
-//estilos
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.cardBackground,
+    ...theme.shadows.small,
+    marginBottom: theme.spacing.sm,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontSize: theme.fontSizes.title,
+    fontFamily: theme.fonts.bold,
+    color: theme.colors.textPrimary,
   },
   subtitle: {
-    fontSize: 12,
-    color: "gray",
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular,
   },
 });
 
 export default Header;
-
-

@@ -1,5 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Text, View, StyleSheet } from "react-native";
+import { theme } from "../theme/theme";
 
 type CategoryTabsProps = {
   onCategoryChange: (category: string) => void;
@@ -25,6 +26,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
           style={[
             styles.tab,
             activeCategory === category.key && styles.activeTab,
+            theme.shadows.small,
           ]}
           onPress={() => {
             onCategoryChange(category.key);
@@ -49,23 +51,28 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.cardBackground,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.small,
   },
   tab: {
-    padding: 10,
-    borderRadius: 20,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.large,
+    backgroundColor: theme.colors.background,
   },
   activeTab: {
-    backgroundColor: "#6200ee",
+    backgroundColor: theme.colors.primary,
   },
   tabText: {
-    color: "#000",
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.medium,
   },
   activeText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: theme.colors.cardBackground,
+    fontFamily: theme.fonts.bold,
   },
 });
 

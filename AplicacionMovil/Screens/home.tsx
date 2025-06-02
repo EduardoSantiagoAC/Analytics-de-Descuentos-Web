@@ -15,6 +15,7 @@ import PromoBanner from "../componentes/promo";
 import AlertCard from "../componentes/Alertas";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
+import { theme } from "../theme/theme";
 
 interface Product {
   id: string;
@@ -52,7 +53,7 @@ const HomeScreen = () => {
     if (nombreLower.includes("hidrolavadora") || nombreLower.includes("mueble") || nombreLower.includes("cocina")) {
       return "Hogar";
     }
-    return "General"; // Default
+    return "General";
   };
 
   const convertirProducto = (p: any): Product => {
@@ -200,7 +201,7 @@ const HomeScreen = () => {
                 placeholder="Buscar productos..."
                 style={styles.input}
               />
-              <Button title="Buscar" onPress={buscarProductos} />
+              <Button title="Buscar" onPress={buscarProductos} color={theme.colors.primary} />
             </View>
             <CategoryTabs
               onCategoryChange={handleCategoryChange}
@@ -208,7 +209,7 @@ const HomeScreen = () => {
             />
             <PromoBanner />
             <AlertCard />
-            {cargando && <ActivityIndicator size="large" color="#6200ee" />}
+            {cargando && <ActivityIndicator size="large" color={theme.colors.primary} />}
             {error && <Text style={styles.errorText}>{error}</Text>}
             {!cargando && !error && filteredProducts.length === 0 && (
               <Text style={styles.noProducts}>No hay productos en esta categoría.</Text>
@@ -241,7 +242,7 @@ const HomeScreen = () => {
             title: selectedProduct.title,
             description: `Precio: $${selectedProduct.price.toFixed(2)}${selectedProduct.discount ? ` (${selectedProduct.discount}% OFF)` : ""}`,
             price: `$${selectedProduct.price.toFixed(2)}`,
-            link: selectedProduct.id, // Usar urlProducto como link
+            link: selectedProduct.id,
           }}
         />
       )}
@@ -252,35 +253,39 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#fefefe",
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
   },
   searchContainer: {
-    flexDirection: "column",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 6,
+    borderColor: theme.colors.textSecondary,
+    borderRadius: theme.borderRadius.small,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular,
+    backgroundColor: theme.colors.cardBackground,
+    ...theme.shadows.small,
   },
   productsWrapper: {
-    justifyContent: "space-between",
-    paddingBottom: 20,
+    paddingBottom: theme.spacing.lg,
   },
   noProducts: {
     textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "#888",
+    marginTop: theme.spacing.lg,
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular,
   },
   errorText: {
     textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "red",
+    marginTop: theme.spacing.lg,
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.error,
+    fontFamily: theme.fonts.regular,
   },
 });
 
