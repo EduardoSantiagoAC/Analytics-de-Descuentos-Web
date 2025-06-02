@@ -66,8 +66,8 @@ const RegisterScreen = () => {
 
       const data = await response.json();
       await register(data.token, data.usuario);
-      // Redirigir automáticamente a la pantalla "Perfil"
-      navigation.navigate("Perfil");
+      console.log("🔄 Registro exitoso, esperando redirección...");
+      // No necesitamos navigation.navigate aquí; AppNavigator lo manejará
     } catch (error) {
       console.error("❌ Error en registro:", error);
       Alert.alert("Error", error.message);

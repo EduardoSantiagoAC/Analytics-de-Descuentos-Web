@@ -1,5 +1,5 @@
-import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import React, { useEffect } from "react";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,9 +19,11 @@ const Stack = createStackNavigator();
 
 const MainTabs = () => {
   const { carrito } = useCarrito();
+  const { usuario } = useAuth(); // Asegurarse de que el usuario esté autenticado
 
   return (
     <Tab.Navigator
+      initialRouteName={usuario ? "Perfil" : "Home"} // Si el usuario está autenticado, inicia en Perfil
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = "home";
@@ -89,36 +91,49 @@ const MainTabs = () => {
 };
 
 const AppNavigator = () => {
-  const { user } = useAuth();
+  const { usuario, isLoading } = useAuth();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (usuario) {
+        // Si el usuario está autenticado, redirige a Main con la pestaña Perfil activa
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Main", params: { screen: "Perfil" } }],
+        });
+      } else {
+        // Si no está autenticado, redirige a Login
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Login" }],
+        });
+      }
+    }
+  }, [usuario, isLoading, navigation]);
+
+  if (isLoading) {
+    return null; // O un componente de carga
+  }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        {user ? (
-          <Stack.Screen
-            name="Main"
-            component={MainTabs}
-            options={{ headerShown: false }}
-          />
-        ) : (
-          <>
-            <Stack.Screen
-              name="Login"
-              component={LoginScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Register"
-              component={RegisterScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Main"
-              component={MainTabs}
-              options={{ headerShown: false }}
-            />
-          </>
-        )}
+      <Stack.Navigator initialRouteName={usuario ? "Main" : "Login"}>
+        <Stack.Screen
+          name="Main"
+          component={MainTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
