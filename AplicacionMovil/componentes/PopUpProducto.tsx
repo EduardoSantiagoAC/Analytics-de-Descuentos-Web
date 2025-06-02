@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity, Linking, Animated } from "react-native";
 import Modal from "react-native-modal";
 import { theme } from "../theme/theme";
 
@@ -21,17 +21,49 @@ interface Props {
 const ProductoPopup: React.FC<Props> = ({ isVisible, onClose, producto }) => {
   const { imageUrl, title, description, price, link } = producto;
 
+  const slideAnim = useRef(new Animated.Value(100)).current;
+
+  useEffect(() => {
+    if (isVisible) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 100,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isVisible, slideAnim]);
+
   return (
-    <Modal isVisible={isVisible} onBackdropPress={onClose} animationIn="zoomIn" animationOut="zoomOut">
-      <View style={[styles.container, theme.shadows.medium]}>
+    <Modal
+      isVisible={isVisible}
+      onBackdropPress={onClose}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+    >
+      <Animated.View
+        style={[
+          styles.container,
+          theme.shadows.medium,
+          { transform: [{ translateY: slideAnim }] },
+        ]}
+      >
         <Image source={{ uri: imageUrl }} style={styles.image} />
         <Text style={styles.title}>{title}</Text>
         {price && <Text style={styles.price}>{price}</Text>}
         <Text style={styles.description}>{description}</Text>
-        <TouchableOpacity style={styles.button} onPress={() => Linking.openURL(link)}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => Linking.openURL(link)}
+        >
           <Text style={styles.buttonText}>Ver más</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </Modal>
   );
 };

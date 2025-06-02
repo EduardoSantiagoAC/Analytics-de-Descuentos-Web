@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import { theme } from "../theme/theme";
 
 interface Product {
@@ -21,33 +21,45 @@ interface Props {
 const ProductCard: React.FC<Props> = ({ product, onAddToCart, onPress }) => {
   console.log("📋 Props de ProductCard:", JSON.stringify(product, null, 2));
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
   return (
-    <TouchableOpacity style={[styles.card, theme.shadows.medium]} onPress={onPress}>
-      <Image
-        source={{ uri: product.image }}
-        style={styles.image}
-        onError={(e) => console.error("❌ Error cargando imagen:", e.nativeEvent.error)}
-        defaultSource={{ uri: "https://dummyimage.com/150x150/ccc/000.png&text=Producto" }}
-      />
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
-          {product.title || "Sin título"}
-        </Text>
-        <Text style={styles.price}>${product.price.toFixed(2)}</Text>
-        {product.discount > 0 && (
-          <>
-            <Text style={styles.oldPrice}>${product.oldPrice.toFixed(2)}</Text>
-            <Text style={styles.discount}>{product.discount}% OFF</Text>
-          </>
-        )}
-      </View>
+    <Animated.View style={[styles.card, theme.shadows.medium, { opacity: fadeAnim }]}>
+      <TouchableOpacity onPress={onPress}>
+        <Image
+          source={{ uri: product.image }}
+          style={styles.image}
+          onError={(e) => console.error("❌ Error cargando imagen:", e.nativeEvent.error)}
+          defaultSource={{ uri: "https://dummyimage.com/150x150/ccc/000.png&text=Producto" }}
+        />
+        <View style={styles.info}>
+          <Text style={styles.title} numberOfLines={2}>
+            {product.title || "Sin título"}
+          </Text>
+          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+          {product.discount > 0 && (
+            <>
+              <Text style={styles.oldPrice}>${product.oldPrice.toFixed(2)}</Text>
+              <Text style={styles.discount}>{product.discount}% OFF</Text>
+            </>
+          )}
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => onAddToCart(product)}
       >
         <Text style={styles.addButtonText}>Añadir al carrito</Text>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </Animated.View>
   );
 };
 
