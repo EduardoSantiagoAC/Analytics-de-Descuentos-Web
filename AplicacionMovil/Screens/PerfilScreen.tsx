@@ -1,14 +1,18 @@
 import React, { useState } from "react";
-import { View, Text, Image, StyleSheet, Button, Alert, TouchableOpacity } from "react-native";
-import { theme } from "../theme/theme";
+import { View, Text, TextInput, Button, StyleSheet, Alert, Image, TouchableOpacity } from "react-native";
 import { useAuth } from "../componentes/AuthContext";
+import { theme } from "../theme/theme";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 
-const PerfilScreen = () => {
-  const { user, logout, fetchUser } = useAuth();
-  const navigation = useNavigation();
+const RegisterScreen = () => {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register } = useAuth();
+  const navigation = useNavigation();
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -26,74 +30,94 @@ const PerfilScreen = () => {
 
     if (!result.canceled) {
       setFoto(result.assets[0].uri);
-      await uploadPhoto(result.assets[0].uri);
     }
   };
 
-  const uploadPhoto = async (uri: string) => {
+  const handleRegister = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       const formData = new FormData();
-      formData.append("foto", {
-        uri,
-        name: "profile.jpg",
-        type: "image/jpeg",
-      } as any);
+      formData.append("nombre", nombre);
+      formData.append("email", email);
+      formData.append("password", password);
 
-      const token = await AsyncStorage.getItem("authToken");
-      const response = await fetch("http://localhost:3000/auth/update-photo", {
+      if (foto) {
+        const response = await fetch(foto);
+        const blob = await response.blob();
+        formData.append("foto", blob, "profile.jpg");
+        console.log("📤 Enviando FormData con foto...");
+      } else {
+        console.log("📤 Enviando FormData sin foto...");
+      }
+
+      const response = await fetch("http://localhost:3000/auth/register", {
         method: "POST",
         body: formData,
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
       });
+
+      console.log("📥 Respuesta del servidor:", response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Error al actualizar foto");
+        throw new Error(errorData.error || "Error al registrar");
       }
 
       const data = await response.json();
-      Alert.alert("Éxito", "Foto de perfil actualizada");
-      await fetchUser(); // Actualizar datos del usuario
-    } catch (error: any) {
+      await register(data.token, data.usuario);
+      // Redirigir automáticamente a la pantalla "Perfil"
+      navigation.navigate("Perfil");
+    } catch (error) {
+      console.error("❌ Error en registro:", error);
       Alert.alert("Error", error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigation.navigate("Login");
-  };
-
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.error}>Por favor, inicia sesión para ver tu perfil.</Text>
-        <Button
-          title="Iniciar Sesión"
-          onPress={() => navigation.navigate("Login")}
-          color={theme.colors.primary}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={pickImage}>
-        <Image source={{ uri: foto || user.foto }} style={styles.foto} />
-        <Text style={styles.changePhotoText}>Cambiar Foto</Text>
+      <Text style={styles.title}>Registro</Text>
+      <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
+        {foto ? (
+          <Image source={{ uri: foto }} style={styles.image} />
+        ) : (
+          <Text style={styles.imageText}>Seleccionar Foto de Perfil</Text>
+        )}
       </TouchableOpacity>
-      <Text style={styles.nombre}>{user.nombre}</Text>
-      <Text style={styles.email}>{user.email}</Text>
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>Información del Perfil</Text>
-        <Text style={styles.infoText}>Miembro desde: Enero 2025</Text>
-        <Text style={styles.infoText}>Pedidos realizados: 5</Text>
-      </View>
-      <Button title="Cerrar Sesión" onPress={handleLogout} color={theme.colors.error} />
+      <TextInput
+        style={styles.input}
+        placeholder="Nombre"
+        value={nombre}
+        onChangeText={setNombre}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Contraseña"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <Button
+        title="Registrarse"
+        onPress={handleRegister}
+        color={theme.colors.primary}
+        disabled={isSubmitting}
+      />
+      <Button
+        title="¿Ya tienes cuenta? Inicia sesión"
+        onPress={() => navigation.navigate("Login")}
+        color={theme.colors.secondary}
+      />
     </View>
   );
 };
@@ -101,63 +125,49 @@ const PerfilScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
     padding: theme.spacing.md,
-    alignItems: "center",
+    backgroundColor: theme.colors.background,
+    justifyContent: "center",
   },
-  foto: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: theme.spacing.sm,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
-  changePhotoText: {
-    textAlign: "center",
-    color: theme.colors.primary,
-    fontSize: theme.fontSizes.medium,
-    fontFamily: theme.fonts.medium,
-    marginBottom: theme.spacing.md,
-  },
-  nombre: {
+  title: {
     fontSize: theme.fontSizes.title,
     color: theme.colors.textPrimary,
     fontFamily: theme.fonts.bold,
-    marginBottom: theme.spacing.sm,
-  },
-  email: {
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.regular,
-    marginBottom: theme.spacing.lg,
-  },
-  infoCard: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.medium,
-    padding: theme.spacing.md,
-    width: "100%",
-    ...theme.shadows.medium,
-    marginBottom: theme.spacing.lg,
-  },
-  infoTitle: {
-    fontSize: theme.fontSizes.large,
-    color: theme.colors.textPrimary,
-    fontFamily: theme.fonts.bold,
-    marginBottom: theme.spacing.sm,
-  },
-  infoText: {
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.regular,
-    marginBottom: theme.spacing.xs,
-  },
-  error: {
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.error,
-    marginBottom: theme.spacing.md,
     textAlign: "center",
+    marginBottom: theme.spacing.lg,
+  },
+  imageContainer: {
+    alignSelf: "center",
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.textSecondary,
+    borderRadius: 60,
+    width: 120,
+    height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  imageText: {
+    textAlign: "center",
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: theme.colors.textSecondary,
+    borderRadius: theme.borderRadius.small,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular,
+    backgroundColor: theme.colors.cardBackground,
   },
 });
 
-export default PerfilScreen;
+export default RegisterScreen;
