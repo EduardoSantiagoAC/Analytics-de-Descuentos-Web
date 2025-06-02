@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error("Error cargando datos de autenticación:", error);
       } finally {
-        setIsLoading(false); // Asegúrate de que siempre se desactive
+        setIsLoading(false); // Asegúrate de que siempre se desactivess
       }
     };
     loadAuthData();
