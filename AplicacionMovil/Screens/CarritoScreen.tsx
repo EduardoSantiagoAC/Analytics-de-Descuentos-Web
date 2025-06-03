@@ -1,13 +1,14 @@
 import React from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { useCarrito } from "../componentes/CarritoContext";
 import { theme } from "../theme/theme";
+import { LinearGradient } from "expo-linear-gradient";
 
 const CarritoScreen = () => {
   const { carrito, removeFromCarrito, clearCarrito } = useCarrito();
 
   const renderItem = ({ item }: { item: { id: string; title: string; image: string; price: number; quantity: number } }) => (
-    <View style={[styles.item, theme.shadows.small]}>
+    <View style={[styles.item, Platform.OS === "web" ? { boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)" } : theme.shadows.small]}>
       <Image source={{ uri: item.image }} style={styles.image} />
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
@@ -26,7 +27,10 @@ const CarritoScreen = () => {
   const total = carrito.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[theme.colors.background, theme.colors.primary + "33"]}
+      style={styles.container}
+    >
       {carrito.length === 0 ? (
         <Text style={styles.emptyText}>El carrito está vacío</Text>
       ) : (
@@ -48,14 +52,13 @@ const CarritoScreen = () => {
           </View>
         </>
       )}
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
     padding: theme.spacing.md,
   },
   item: {
@@ -130,6 +133,9 @@ const styles = StyleSheet.create({
     color: theme.colors.cardBackground,
     fontSize: theme.fontSizes.medium,
     fontFamily: theme.fonts.medium,
+  },
+  list: {
+    paddingBottom: theme.spacing.lg,
   },
 });
 

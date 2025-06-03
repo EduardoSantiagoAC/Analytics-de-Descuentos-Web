@@ -14,6 +14,10 @@ const LoginScreen = () => {
     try {
       await login(email, password);
       console.log("🔐 Inicio de sesión exitoso...");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main", params: { screen: "Perfil" } }],
+      });
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
