@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, TextInput, Button, ScrollView, StyleSheet, Text, ActivityIndicator, Switch } from "react-native";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
+import { theme } from "../theme/theme";
 
 interface Product {
   id: string;
@@ -13,7 +14,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "http://localhost:3000"; // Ajusta con tu IP
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const BusquedaScreen = () => {
@@ -24,6 +25,20 @@ const BusquedaScreen = () => {
   const [soloOfertas, setSoloOfertas] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+  const asignarCategoria = (nombre: string): string => {
+    const nombreLower = nombre.toLowerCase();
+    if (nombreLower.includes("tenis") || nombreLower.includes("ropa") || nombreLower.includes("zapat") || nombreLower.includes("camis")) {
+      return "Ropa";
+    }
+    if (nombreLower.includes("samsung") || nombreLower.includes("motorola") || nombreLower.includes("laptop") || nombreLower.includes("dron") || nombreLower.includes("roku")) {
+      return "Electrónica";
+    }
+    if (nombreLower.includes("hidrolavadora") || nombreLower.includes("mueble") || nombreLower.includes("cocina")) {
+      return "Hogar";
+    }
+    return "General";
+  };
+
   const convertirProducto = (p: any): Product => {
     console.log("📋 Producto crudo:", JSON.stringify(p, null, 2));
     return {
@@ -33,7 +48,7 @@ const BusquedaScreen = () => {
       oldPrice: Number(p.precioOriginal || p.oldPrice || p.precio || p.price || 0),
       price: Number(p.precio || p.price || 0),
       discount: Number(p.porcentajeDescuento || p.discount || 0),
-      category: p.categoria || p.category || "General",
+      category: p.categoria || asignarCategoria(p.nombre || p.title || ""),
     };
   };
 
@@ -55,7 +70,6 @@ const BusquedaScreen = () => {
       const data = await response.json();
       console.log("📊 Respuesta completa de la API:", JSON.stringify(data, null, 2));
       if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
-      // Manejar respuesta como arreglo directo
       const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(convertirProducto);
       console.log("📋 Productos convertidos:", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
@@ -104,18 +118,22 @@ const BusquedaScreen = () => {
           placeholder="Buscar producto..."
           style={styles.input}
         />
-        <Button title="Buscar" onPress={buscarProductos} />
+        <Button title="Buscar" onPress={buscarProductos} color={theme.colors.primary} />
       </View>
 
       <View style={styles.filterContainer}>
         <Text style={styles.filterLabel}>Mostrar solo ofertas</Text>
-        <Switch value={soloOfertas} onValueChange={setSoloOfertas} />
+        <Switch
+          value={soloOfertas}
+          onValueChange={setSoloOfertas}
+          trackColor={{ true: theme.colors.primary }}
+        />
       </View>
 
-      {cargando && <ActivityIndicator size="large" color="#6200ee" style={{ marginTop: 20 }} />}
+      {cargando && <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: theme.spacing.lg }} />}
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <ScrollView style={{ marginTop: 20 }}>
+      <ScrollView style={{ marginTop: theme.spacing.md }}>
         {filteredResults.length === 0 && !cargando && !error && (
           <Text style={styles.noResults}>No se encontraron productos.</Text>
         )}
@@ -125,7 +143,6 @@ const BusquedaScreen = () => {
             <ProductCard
               key={p.id}
               product={p}
-              onAddToCart={() => console.log("🛒 Añadido al carrito:", p.title)}
               onPress={() => setSelectedProduct(p)}
             />
           );
@@ -142,7 +159,7 @@ const BusquedaScreen = () => {
             title: selectedProduct.title,
             description: `Precio: $${selectedProduct.price.toFixed(2)}${selectedProduct.discount ? ` (${selectedProduct.discount}% OFF)` : ""}`,
             price: `$${selectedProduct.price.toFixed(2)}`,
-            link: "https://www.mercadolibre.com.mx",
+            link: selectedProduct.id,
           }}
         />
       )}
@@ -152,43 +169,51 @@ const BusquedaScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
     flex: 1,
-    backgroundColor: "#fefefe",
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: theme.spacing.md,
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginRight: 10,
+    borderColor: theme.colors.textSecondary,
+    borderRadius: theme.borderRadius.small,
+    padding: theme.spacing.sm,
+    marginRight: theme.spacing.sm,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular,
+    backgroundColor: theme.colors.cardBackground,
+    ...theme.shadows.small,
   },
   filterContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: theme.spacing.md,
   },
   filterLabel: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fonts.regular,
   },
   error: {
-    color: "red",
-    marginTop: 10,
+    color: theme.colors.error,
+    marginTop: theme.spacing.md,
     textAlign: "center",
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular,
   },
   noResults: {
     textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "#888",
+    marginTop: theme.spacing.lg,
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular,
   },
 });
 

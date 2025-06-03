@@ -1,0 +1,100 @@
+import React, { createContext, useContext, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  foto: string;
+}
+
+interface AuthContextType {
+  usuario: Usuario | null;
+  token: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (token: string, usuario: Usuario) => Promise<void>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAuthData = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem("token");
+        const storedUsuario = await AsyncStorage.getItem("usuario");
+        if (storedToken && storedUsuario) {
+          setToken(storedToken);
+          setUsuario(JSON.parse(storedUsuario));
+        }
+      } catch (error) {
+        console.error("Error cargando datos de autenticación:", error);
+      } finally {
+        setIsLoading(false); // Asegúrate de que siempre se desactivess
+      }
+    };
+    loadAuthData();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await fetch("http://localhost:3000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al iniciar sesión");
+      }
+
+      const data = await response.json();
+      setToken(data.token);
+      setUsuario(data.usuario);
+      await AsyncStorage.setItem("token", data.token);
+      await AsyncStorage.setItem("usuario", JSON.stringify(data.usuario));
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const register = async (token: string, usuario: Usuario) => {
+    try {
+      setToken(token);
+      setUsuario(usuario);
+      await AsyncStorage.setItem("token", token);
+      await AsyncStorage.setItem("usuario", JSON.stringify(usuario));
+    } catch (error) {
+      console.error("Error guardando datos de registro:", error);
+      throw new Error("Error al registrar en el contexto");
+    }
+  };
+
+  const logout = async () => {
+    setToken(null);
+    setUsuario(null);
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("usuario");
+  };
+
+  return (
+    <AuthContext.Provider value={{ usuario, token, login, register, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
+  }
+  return context;
+};

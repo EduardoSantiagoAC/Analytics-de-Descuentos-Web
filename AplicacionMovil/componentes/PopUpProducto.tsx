@@ -1,6 +1,7 @@
-import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity, Linking, Animated } from "react-native";
 import Modal from "react-native-modal";
+import { theme } from "../theme/theme";
 
 export interface Producto {
   id: any;
@@ -11,74 +12,104 @@ export interface Producto {
   link: string;
 }
 
-// 2 modos se ve o no se ve 
 interface Props {
   isVisible: boolean;
   onClose: () => void;
   producto: Producto;
 }
 
-// Componente que muestra un popup con la información del producto
 const ProductoPopup: React.FC<Props> = ({ isVisible, onClose, producto }) => {
   const { imageUrl, title, description, price, link } = producto;
 
-  return (
-    <Modal isVisible={isVisible} onBackdropPress={onClose} animationIn="zoomIn" animationOut="zoomOut">
-      <View style={styles.container}>
-        <Image source={{ uri: imageUrl }} style={styles.image} />
+  const slideAnim = useRef(new Animated.Value(100)).current;
 
+  useEffect(() => {
+    if (isVisible) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 100,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isVisible, slideAnim]);
+
+  return (
+    <Modal
+      isVisible={isVisible}
+      onBackdropPress={onClose}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+    >
+      <Animated.View
+        style={[
+          styles.container,
+          theme.shadows.medium,
+          { transform: [{ translateY: slideAnim }] },
+        ]}
+      >
+        <Image source={{ uri: imageUrl }} style={styles.image} />
         <Text style={styles.title}>{title}</Text>
         {price && <Text style={styles.price}>{price}</Text>}
         <Text style={styles.description}>{description}</Text>
-
-        <TouchableOpacity style={styles.button} onPress={() => Linking.openURL(link)}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => Linking.openURL(link)}
+        >
           <Text style={styles.buttonText}>Ver más</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </Modal>
   );
 };
-// estilos
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 15,
+    backgroundColor: theme.colors.cardBackground,
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.medium,
     alignItems: "center",
   },
   image: {
-    width: 150,
-    height: 150,
-    borderRadius: 10,
-    marginBottom: 15,
+    width: 180,
+    height: 180,
+    borderRadius: theme.borderRadius.small,
+    marginBottom: theme.spacing.md,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
+    fontSize: theme.fontSizes.large,
+    fontFamily: theme.fonts.bold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.sm,
     textAlign: "center",
   },
   price: {
-    fontSize: 16,
-    color: "#e53935",
-    fontWeight: "600",
-    marginBottom: 5,
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.bold,
+    marginBottom: theme.spacing.sm,
   },
   description: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.textSecondary,
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: theme.spacing.md,
   },
   button: {
-    backgroundColor: "#ff6f00",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: theme.colors.secondary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.small,
   },
   buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: theme.colors.cardBackground,
+    fontFamily: theme.fonts.bold,
+    fontSize: theme.fontSizes.medium,
   },
 });
 

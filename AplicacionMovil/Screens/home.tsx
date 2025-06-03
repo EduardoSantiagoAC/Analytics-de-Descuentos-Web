@@ -9,24 +9,13 @@ import {
   Button,
   Keyboard,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
 import Header from "../componentes/Cabezal";
 import CategoryTabs from "../componentes/Categorias";
 import PromoBanner from "../componentes/promo";
 import AlertCard from "../componentes/Alertas";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
-
-type RootStackParamList = {
-  Home: undefined;
-  Ropa: undefined;
-  Electronica: undefined;
-  Hogar: undefined;
-  Buscar: undefined;
-};
-
-type ProductCategory = keyof Omit<RootStackParamList, "Home">;
+import { theme } from "../theme/theme";
 
 interface Product {
   id: string;
@@ -35,14 +24,13 @@ interface Product {
   oldPrice: number;
   price: number;
   discount: number;
-  category: ProductCategory;
+  category: string;
 }
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "http://localhost:3000"; // Ajusta con tu IP
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const HomeScreen = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [activeCategory, setActiveCategory] = useState<string>("Home");
   const [productos, setProductos] = useState<Product[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -54,6 +42,20 @@ const HomeScreen = () => {
     buscarProductosInicial();
   }, []);
 
+  const asignarCategoria = (nombre: string): string => {
+    const nombreLower = nombre.toLowerCase();
+    if (nombreLower.includes("tenis") || nombreLower.includes("ropa") || nombreLower.includes("zapat") || nombreLower.includes("camis")) {
+      return "Ropa";
+    }
+    if (nombreLower.includes("samsung") || nombreLower.includes("motorola") || nombreLower.includes("laptop") || nombreLower.includes("dron") || nombreLower.includes("roku")) {
+      return "Electrónica";
+    }
+    if (nombreLower.includes("hidrolavadora") || nombreLower.includes("mueble") || nombreLower.includes("cocina")) {
+      return "Hogar";
+    }
+    return "General";
+  };
+
   const convertirProducto = (p: any): Product => {
     console.log("📋 Producto crudo:", JSON.stringify(p, null, 2));
     return {
@@ -63,7 +65,7 @@ const HomeScreen = () => {
       oldPrice: Number(p.precioOriginal || p.oldPrice || p.precio || p.price || 0),
       price: Number(p.precio || p.price || 0),
       discount: Number(p.porcentajeDescuento || p.discount || 0),
-      category: (p.categoria || p.category || "Ropa") as ProductCategory,
+      category: p.categoria || asignarCategoria(p.nombre || p.title || ""),
     };
   };
 
@@ -82,7 +84,6 @@ const HomeScreen = () => {
       const data = await response.json();
       console.log("📊 Respuesta completa de la API:", JSON.stringify(data, null, 2));
       if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
-      // Manejar respuesta como arreglo directo
       const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(convertirProducto);
       console.log("📋 Productos convertidos:", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
@@ -96,7 +97,7 @@ const HomeScreen = () => {
           oldPrice: 200,
           price: 150,
           discount: 25,
-          category: "Ropa",
+          category: "General",
         },
       ]);
     } catch (err: any) {
@@ -110,7 +111,7 @@ const HomeScreen = () => {
           oldPrice: 200,
           price: 150,
           discount: 25,
-          category: "Ropa",
+          category: "General",
         },
       ]);
     } finally {
@@ -137,7 +138,6 @@ const HomeScreen = () => {
       const data = await response.json();
       console.log("📊 Respuesta completa de la API (búsqueda):", JSON.stringify(data, null, 2));
       if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
-      // Manejar respuesta como arreglo directo
       const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(convertirProducto);
       console.log("📋 Productos convertidos (búsqueda):", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
@@ -151,7 +151,7 @@ const HomeScreen = () => {
           oldPrice: 200,
           price: 150,
           discount: 25,
-          category: "Ropa",
+          category: "General",
         },
       ]);
     } catch (err: any) {
@@ -165,7 +165,7 @@ const HomeScreen = () => {
           oldPrice: 200,
           price: 150,
           discount: 25,
-          category: "Ropa",
+          category: "General",
         },
       ]);
     } finally {
@@ -175,17 +175,12 @@ const HomeScreen = () => {
 
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
-    if (category !== "Home") {
-      navigation.navigate(category as keyof RootStackParamList);
-    }
+    console.log(`📋 Categoría activa cambiada a: ${category}`);
   };
 
-  const añadirAlCarrito = (producto: Product) => {
-    console.log("🛒 Añadido al carrito:", producto.title);
-  };
-
-  // Temporalmente desactivar filtrado por categoría
-  const filteredProducts = productos;
+  const filteredProducts = activeCategory === "Home"
+    ? productos
+    : productos.filter(p => p.category === activeCategory);
 
   console.log("📋 Productos a renderizar:", JSON.stringify(filteredProducts, null, 2));
 
@@ -202,7 +197,7 @@ const HomeScreen = () => {
                 placeholder="Buscar productos..."
                 style={styles.input}
               />
-              <Button title="Buscar" onPress={buscarProductos} />
+              <Button title="Buscar" onPress={buscarProductos} color={theme.colors.primary} />
             </View>
             <CategoryTabs
               onCategoryChange={handleCategoryChange}
@@ -210,10 +205,10 @@ const HomeScreen = () => {
             />
             <PromoBanner />
             <AlertCard />
-            {cargando && <ActivityIndicator size="large" color="#6200ee" />}
+            {cargando && <ActivityIndicator size="large" color={theme.colors.primary} />}
             {error && <Text style={styles.errorText}>{error}</Text>}
             {!cargando && !error && filteredProducts.length === 0 && (
-              <Text style={styles.noProducts}>No hay productos disponibles.</Text>
+              <Text style={styles.noProducts}>No hay productos en esta categoría.</Text>
             )}
           </>
         }
@@ -225,7 +220,6 @@ const HomeScreen = () => {
           return (
             <ProductCard
               product={item}
-              onAddToCart={añadirAlCarrito}
               onPress={() => setSelectedProduct(item)}
             />
           );
@@ -243,7 +237,7 @@ const HomeScreen = () => {
             title: selectedProduct.title,
             description: `Precio: $${selectedProduct.price.toFixed(2)}${selectedProduct.discount ? ` (${selectedProduct.discount}% OFF)` : ""}`,
             price: `$${selectedProduct.price.toFixed(2)}`,
-            link: "https://www.mercadolibre.com.mx",
+            link: selectedProduct.id,
           }}
         />
       )}
@@ -254,35 +248,39 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#fefefe",
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
   },
   searchContainer: {
-    flexDirection: "column",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 6,
+    borderColor: theme.colors.textSecondary,
+    borderRadius: theme.borderRadius.small,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular,
+    backgroundColor: theme.colors.cardBackground,
+    ...theme.shadows.small,
   },
   productsWrapper: {
-    justifyContent: "space-between",
-    paddingBottom: 20,
+    paddingBottom: theme.spacing.lg,
   },
   noProducts: {
     textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "#888",
+    marginTop: theme.spacing.lg,
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular,
   },
   errorText: {
     textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "red",
+    marginTop: theme.spacing.lg,
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.error,
+    fontFamily: theme.fonts.regular,
   },
 });
 
