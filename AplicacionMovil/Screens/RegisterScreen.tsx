@@ -65,8 +65,12 @@ const RegisterScreen = () => {
       }
 
       const data = await response.json();
-      await register(data.token, data.usuario); // Actualiza el contexto con el token y usuario
+      await register(data.token, data.usuario);
       console.log("🔄 Registro exitoso, esperando redirección...");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main", params: { screen: "Perfil" } }],
+      });
     } catch (error) {
       console.error("❌ Error en registro:", error);
       Alert.alert("Error", error.message);

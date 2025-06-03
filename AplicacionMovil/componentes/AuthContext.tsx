@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedToken && storedUsuario) {
           setToken(storedToken);
           setUsuario(JSON.parse(storedUsuario));
+          console.log("🔍 Datos cargados desde AsyncStorage - usuario:", JSON.parse(storedUsuario));
         }
       } catch (error) {
         console.error("Error cargando datos de autenticación:", error);
@@ -56,8 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const data = await response.json();
+      console.log("📥 Respuesta del backend (login):", data);
       setToken(data.token);
       setUsuario(data.usuario);
+      console.log("🔄 Estado actualizado - usuario:", data.usuario);
       await AsyncStorage.setItem("token", data.token);
       await AsyncStorage.setItem("usuario", JSON.stringify(data.usuario));
     } catch (error) {
@@ -69,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setToken(token);
       setUsuario(usuario);
+      console.log("🔄 Estado actualizado - usuario:", usuario);
       await AsyncStorage.setItem("token", token);
       await AsyncStorage.setItem("usuario", JSON.stringify(usuario));
     } catch (error) {
@@ -80,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setToken(null);
     setUsuario(null);
+    console.log("🔄 Estado actualizado - usuario:", null);
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("usuario");
   };
