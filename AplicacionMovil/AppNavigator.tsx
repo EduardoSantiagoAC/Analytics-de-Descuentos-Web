@@ -19,11 +19,9 @@ const Stack = createStackNavigator();
 
 const MainTabs = () => {
   const { carrito } = useCarrito();
-  const { usuario } = useAuth(); // Asegurarse de que el usuario esté autenticado
 
   return (
     <Tab.Navigator
-      initialRouteName={usuario ? "Perfil" : "Home"} // Inicia en Perfil si el usuario está autenticado
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = "home";
@@ -95,10 +93,10 @@ const AppNavigator = () => {
 
   if (isLoading) {
     return (
-      <View>
-        <Text>Cargando...</Text> {/* Mostrar algo mientras carga */}
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Cargando...</Text>
       </View>
-    ); // Mostrar un indicador de carga
+    );
   }
 
   return (
