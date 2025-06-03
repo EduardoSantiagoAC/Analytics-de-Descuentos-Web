@@ -1,5 +1,5 @@
-import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import React, { useEffect } from "react";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -90,6 +90,23 @@ const MainTabs = () => {
 
 const AppNavigator = () => {
   const { usuario, isLoading } = useAuth();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (usuario) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Main", params: { screen: "Perfil" } }],
+        });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Login" }],
+        });
+      }
+    }
+  }, [usuario, isLoading, navigation]);
 
   if (isLoading) {
     return (
