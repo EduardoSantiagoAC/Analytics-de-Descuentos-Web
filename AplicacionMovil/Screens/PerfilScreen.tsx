@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { useAuth } from "../componentes/AuthContext";
 import { theme } from "../theme/theme";
 import { useNavigation } from "@react-navigation/native";
-import LinearGradient from "react-native-linear-gradient";
+import { LinearGradient } from "expo-linear-gradient";
 
 const PerfilScreen = () => {
   const { usuario, logout } = useAuth();
@@ -87,7 +87,11 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.medium,
     width: "80%",
     alignItems: "center",
-    ...theme.shadows.medium,
+    ...(Platform.OS === "web"
+      ? {
+          boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.15)",
+        }
+      : theme.shadows.medium),
   },
   label: {
     fontSize: theme.fontSizes.medium,
@@ -104,7 +108,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     backgroundColor: theme.colors.secondary,
     borderRadius: theme.borderRadius.medium,
-    ...theme.shadows.medium,
+    ...(Platform.OS === "web"
+      ? {
+          boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.15)",
+        }
+      : theme.shadows.medium),
   },
   buttonText: {
     color: theme.colors.cardBackground,

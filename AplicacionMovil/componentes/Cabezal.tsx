@@ -6,7 +6,7 @@ import { theme } from "../theme/theme";
 const Header = () => {
   return (
     <View style={styles.container}>
-      <View>
+      <View style={styles.titleContainer}>
         <Text style={styles.title}>ECONOFY</Text>
         <Text style={styles.subtitle}>Ahorra inteligentemente</Text>
       </View>
@@ -26,6 +26,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.cardBackground,
     ...theme.shadows.small,
     marginBottom: theme.spacing.sm,
+  },
+  titleContainer: {
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.large, // Bordes redondeados
+    padding: theme.spacing.sm,
   },
   title: {
     fontSize: theme.fontSizes.title,

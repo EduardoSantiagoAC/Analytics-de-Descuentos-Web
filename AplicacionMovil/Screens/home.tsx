@@ -8,6 +8,8 @@ import {
   TextInput,
   Button,
   Keyboard,
+  Platform,
+  TouchableOpacity,
 } from "react-native";
 import Header from "../componentes/Cabezal";
 import CategoryTabs from "../componentes/Categorias";
@@ -16,6 +18,7 @@ import AlertCard from "../componentes/Alertas";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
 import { theme } from "../theme/theme";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface Product {
   id: string;
@@ -56,14 +59,24 @@ const HomeScreen = () => {
     return "General";
   };
 
-  const convertirProducto = (p: any): Product => {
+  const convertirProducto = (p: any, index: number): Product => {
     console.log("📋 Producto crudo:", JSON.stringify(p, null, 2));
+    // Manejo robusto de precios: elimina comas y convierte a número
+    const parsePrice = (value: any): number => {
+      if (typeof value === "number") return value;
+      if (typeof value === "string") {
+        const cleanedValue = value.replace(/[^0-9.]/g, ""); // Elimina todo excepto números y puntos
+        return parseFloat(cleanedValue) || 0;
+      }
+      return 0;
+    };
+
     return {
-      id: p.urlProducto || p._id || Math.random().toString(),
+      id: p.urlProducto || p._id || `product-${index}`,
       title: p.nombre || p.title || "Sin título",
       image: p.imagen || p.image || DEFAULT_IMAGE,
-      oldPrice: Number(p.precioOriginal || p.oldPrice || p.precio || p.price || 0),
-      price: Number(p.precio || p.price || 0),
+      oldPrice: parsePrice(p.precioOriginal || p.oldPrice || p.precio || p.price || 0),
+      price: parsePrice(p.precio || p.price || 0),
       discount: Number(p.porcentajeDescuento || p.discount || 0),
       category: p.categoria || asignarCategoria(p.nombre || p.title || ""),
     };
@@ -84,7 +97,9 @@ const HomeScreen = () => {
       const data = await response.json();
       console.log("📊 Respuesta completa de la API:", JSON.stringify(data, null, 2));
       if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
-      const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(convertirProducto);
+      const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(
+        (item: any, index: number) => convertirProducto(item, index)
+      );
       console.log("📋 Productos convertidos:", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
         console.warn("⚠️ No se encontraron productos en la respuesta");
@@ -138,7 +153,9 @@ const HomeScreen = () => {
       const data = await response.json();
       console.log("📊 Respuesta completa de la API (búsqueda):", JSON.stringify(data, null, 2));
       if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
-      const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(convertirProducto);
+      const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(
+        (item: any, index: number) => convertirProducto(item, index)
+      );
       console.log("📋 Productos convertidos (búsqueda):", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
         console.warn("⚠️ No se encontraron productos en la búsqueda");
@@ -182,10 +199,13 @@ const HomeScreen = () => {
     ? productos
     : productos.filter(p => p.category === activeCategory);
 
-  console.log("📋 Productos a renderizar:", JSON.stringify(filteredProducts, null, 2));
+  console.log("📋 Productos filtrados a renderizar:", JSON.stringify(filteredProducts, null, 2));
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[theme.colors.background, theme.colors.primary + "33"]}
+      style={styles.container}
+    >
       <FlatList
         ListHeaderComponent={
           <>
@@ -197,15 +217,22 @@ const HomeScreen = () => {
                 placeholder="Buscar productos..."
                 style={styles.input}
               />
-              <Button title="Buscar" onPress={buscarProductos} color={theme.colors.primary} />
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={buscarProductos}
+              >
+                <Text style={styles.searchButtonText}>BUSCAR</Text>
+              </TouchableOpacity>
             </View>
             <CategoryTabs
               onCategoryChange={handleCategoryChange}
               activeCategory={activeCategory}
             />
-            <PromoBanner />
-            <AlertCard />
-            {cargando && <ActivityIndicator size="large" color={theme.colors.primary} />}
+            <View style={styles.promoContainer}>
+              <PromoBanner />
+              <AlertCard />
+            </View>
+            {cargando && <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />}
             {error && <Text style={styles.errorText}>{error}</Text>}
             {!cargando && !error && filteredProducts.length === 0 && (
               <Text style={styles.noProducts}>No hay productos en esta categoría.</Text>
@@ -215,6 +242,7 @@ const HomeScreen = () => {
         data={filteredProducts}
         keyExtractor={(item) => item.id}
         numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
         renderItem={({ item }) => {
           console.log("📋 Renderizando ProductCard para:", JSON.stringify(item, null, 2));
           return (
@@ -241,43 +269,74 @@ const HomeScreen = () => {
           }}
         />
       )}
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.background,
   },
   searchContainer: {
-    marginBottom: theme.spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
   },
   input: {
+    flex: 1,
     borderWidth: 1,
     borderColor: theme.colors.textSecondary,
-    borderRadius: theme.borderRadius.small,
-    padding: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
+    borderRadius: theme.borderRadius.large,
+    padding: theme.spacing.md,
     fontSize: theme.fontSizes.medium,
     fontFamily: theme.fonts.regular,
     backgroundColor: theme.colors.cardBackground,
-    ...theme.shadows.small,
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)" }
+      : theme.shadows.small),
+  },
+  searchButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.large,
+    marginLeft: theme.spacing.sm,
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)" }
+      : theme.shadows.small),
+  },
+  searchButtonText: {
+    color: theme.colors.cardBackground,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.bold,
+    textAlign: "center",
+  },
+  promoContainer: {
+    marginVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
+  },
+  columnWrapper: {
+    justifyContent: "space-around",
+    marginVertical: theme.spacing.sm,
   },
   productsWrapper: {
-    paddingBottom: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.md,
+  },
+  loader: {
+    marginVertical: theme.spacing.lg,
   },
   noProducts: {
     textAlign: "center",
-    marginTop: theme.spacing.lg,
+    marginVertical: theme.spacing.lg,
     fontSize: theme.fontSizes.medium,
     color: theme.colors.textSecondary,
     fontFamily: theme.fonts.regular,
   },
   errorText: {
     textAlign: "center",
-    marginTop: theme.spacing.lg,
+    marginVertical: theme.spacing.lg,
     fontSize: theme.fontSizes.medium,
     color: theme.colors.error,
     fontFamily: theme.fonts.regular,

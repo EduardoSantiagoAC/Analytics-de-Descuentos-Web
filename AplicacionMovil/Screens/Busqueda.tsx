@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, ScrollView, StyleSheet, Text, ActivityIndicator, Switch } from "react-native";
+import { View, TextInput, Button, ScrollView, StyleSheet, Text, ActivityIndicator, Switch, Platform } from "react-native";
 import ProductCard from "../componentes/TarjetaProducto";
 import ProductoPopup from "../componentes/PopUpProducto";
 import { theme } from "../theme/theme";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface Product {
   id: string;
@@ -110,44 +111,49 @@ const BusquedaScreen = () => {
   console.log("📋 Resultados a renderizar:", JSON.stringify(filteredResults, null, 2));
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          value={busqueda}
-          onChangeText={setBusqueda}
-          placeholder="Buscar producto..."
-          style={styles.input}
-        />
-        <Button title="Buscar" onPress={buscarProductos} color={theme.colors.primary} />
+    <LinearGradient
+      colors={[theme.colors.background, theme.colors.primary + "33"]}
+      style={styles.container}
+    >
+      <View style={styles.content}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            value={busqueda}
+            onChangeText={setBusqueda}
+            placeholder="Buscar producto..."
+            style={styles.input}
+          />
+          <Button title="Buscar" onPress={buscarProductos} color={theme.colors.primary} />
+        </View>
+
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>Mostrar solo ofertas</Text>
+          <Switch
+            value={soloOfertas}
+            onValueChange={setSoloOfertas}
+            trackColor={{ true: theme.colors.primary }}
+          />
+        </View>
+
+        {cargando && <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: theme.spacing.lg }} />}
+        {error && <Text style={styles.error}>{error}</Text>}
+
+        <ScrollView style={{ marginTop: theme.spacing.md }}>
+          {filteredResults.length === 0 && !cargando && !error && (
+            <Text style={styles.noResults}>No se encontraron productos.</Text>
+          )}
+          {filteredResults.map((p) => {
+            console.log("📋 Renderizando ProductCard para:", JSON.stringify(p, null, 2));
+            return (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onPress={() => setSelectedProduct(p)}
+              />
+            );
+          })}
+        </ScrollView>
       </View>
-
-      <View style={styles.filterContainer}>
-        <Text style={styles.filterLabel}>Mostrar solo ofertas</Text>
-        <Switch
-          value={soloOfertas}
-          onValueChange={setSoloOfertas}
-          trackColor={{ true: theme.colors.primary }}
-        />
-      </View>
-
-      {cargando && <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: theme.spacing.lg }} />}
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      <ScrollView style={{ marginTop: theme.spacing.md }}>
-        {filteredResults.length === 0 && !cargando && !error && (
-          <Text style={styles.noResults}>No se encontraron productos.</Text>
-        )}
-        {filteredResults.map((p) => {
-          console.log("📋 Renderizando ProductCard para:", JSON.stringify(p, null, 2));
-          return (
-            <ProductCard
-              key={p.id}
-              product={p}
-              onPress={() => setSelectedProduct(p)}
-            />
-          );
-        })}
-      </ScrollView>
 
       {selectedProduct && (
         <ProductoPopup
@@ -163,15 +169,17 @@ const BusquedaScreen = () => {
           }}
         />
       )}
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.background,
   },
   searchContainer: {
     flexDirection: "row",
@@ -188,7 +196,9 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     fontFamily: theme.fonts.regular,
     backgroundColor: theme.colors.cardBackground,
-    ...theme.shadows.small,
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)" }
+      : theme.shadows.small),
   },
   filterContainer: {
     flexDirection: "row",

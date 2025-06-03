@@ -7,9 +7,11 @@ const AlertCard = () => {
   return (
     <View style={[styles.card, theme.shadows.small]}>
       <Feather name="bell" size={24} color={theme.colors.textPrimary} style={styles.icon} />
-      <View>
+      <View style={styles.textContainer}>
         <Text style={styles.title}>Prevención de escasez</Text>
-        <Text style={styles.subtitle}>Recibe alertas sobre productos con bajo inventario</Text>
+        <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
+          Recibe alertas sobre productos con bajo inventario
+        </Text>
       </View>
     </View>
   );
@@ -28,6 +30,10 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: theme.spacing.md,
+  },
+  textContainer: {
+    flex: 1, // Permite que el texto ocupe el espacio disponible
+    flexWrap: "wrap", // Asegura que el texto se envuelva
   },
   title: {
     fontFamily: theme.fonts.bold,
