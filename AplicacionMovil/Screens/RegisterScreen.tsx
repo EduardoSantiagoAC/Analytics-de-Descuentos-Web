@@ -10,7 +10,7 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Nuevo estado para evitar doble envío
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
   const navigation = useNavigation();
 
@@ -34,7 +34,7 @@ const RegisterScreen = () => {
   };
 
   const handleRegister = async () => {
-    if (isSubmitting) return; // Evita múltiples envíos
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
@@ -65,15 +65,13 @@ const RegisterScreen = () => {
       }
 
       const data = await response.json();
-      await register(data.token, data.usuario); // Ajuste: Usar el token y usuario devuelto por el backend
-      Alert.alert("Éxito", "Registro exitoso", [
-        { text: "OK", onPress: () => navigation.navigate("Perfil") },
-      ]);
+      await register(data.token, data.usuario); // Actualiza el contexto con el token y usuario
+      console.log("🔄 Registro exitoso, esperando redirección...");
     } catch (error) {
       console.error("❌ Error en registro:", error);
       Alert.alert("Error", error.message);
     } finally {
-      setIsSubmitting(false); // Rehabilitar el botón
+      setIsSubmitting(false);
     }
   };
 
@@ -112,7 +110,7 @@ const RegisterScreen = () => {
         title="Registrarse"
         onPress={handleRegister}
         color={theme.colors.primary}
-        disabled={isSubmitting} // Deshabilitar mientras se procesa
+        disabled={isSubmitting}
       />
       <Button
         title="¿Ya tienes cuenta? Inicia sesión"

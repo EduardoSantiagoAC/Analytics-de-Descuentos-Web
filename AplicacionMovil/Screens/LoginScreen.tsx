@@ -13,9 +13,7 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       await login(email, password);
-      Alert.alert("Éxito", "Inicio de sesión exitoso", [
-        { text: "OK", onPress: () => navigation.navigate("Perfil") },
-      ]);
+      console.log("🔐 Inicio de sesión exitoso...");
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }

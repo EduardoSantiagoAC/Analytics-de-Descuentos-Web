@@ -1,123 +1,48 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, Image, TouchableOpacity } from "react-native";
+import React from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { useAuth } from "../componentes/AuthContext";
 import { theme } from "../theme/theme";
 import { useNavigation } from "@react-navigation/native";
-import * as ImagePicker from "expo-image-picker";
 
-const RegisterScreen = () => {
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [foto, setFoto] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register } = useAuth();
+const PerfilScreen = () => {
+  const { usuario, logout } = useAuth();
   const navigation = useNavigation();
 
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Permiso requerido", "Se necesita acceso a la galería para seleccionar una foto.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setFoto(result.assets[0].uri);
-    }
-  };
-
-  const handleRegister = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("nombre", nombre);
-      formData.append("email", email);
-      formData.append("password", password);
-
-      if (foto) {
-        const response = await fetch(foto);
-        const blob = await response.blob();
-        formData.append("foto", blob, "profile.jpg");
-        console.log("📤 Enviando FormData con foto...");
-      } else {
-        console.log("📤 Enviando FormData sin foto...");
-      }
-
-      const response = await fetch("http://localhost:3000/auth/register", {
-        method: "POST",
-        body: formData,
-      });
-
-      console.log("📥 Respuesta del servidor:", response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al registrar");
-      }
-
-      const data = await response.json();
-      await register(data.token, data.usuario);
-      console.log("🔄 Registro exitoso, esperando redirección...");
-      // No necesitamos navigation.navigate aquí; AppNavigator lo manejará
-    } catch (error) {
-      console.error("❌ Error en registro:", error);
-      Alert.alert("Error", error.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (!usuario) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>No has iniciado sesión</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("Login")}
+        >
+          <Text style={styles.buttonText}>Iniciar Sesión</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registro</Text>
-      <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
-        {foto ? (
-          <Image source={{ uri: foto }} style={styles.image} />
-        ) : (
-          <Text style={styles.imageText}>Seleccionar Foto de Perfil</Text>
-        )}
+      <Text style={styles.title}>Perfil</Text>
+      <Image
+        source={{ uri: usuario.foto || "https://via.placeholder.com/120x120.png?text=Sin+Foto" }}
+        style={styles.image}
+      />
+      <Text style={styles.label}>Nombre: {usuario.nombre}</Text>
+      <Text style={styles.label}>Email: {usuario.email}</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={async () => {
+          await logout();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Login" }],
+          });
+        }}
+      >
+        <Text style={styles.buttonText}>Cerrar Sesión</Text>
       </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre"
-        value={nombre}
-        onChangeText={setNombre}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button
-        title="Registrarse"
-        onPress={handleRegister}
-        color={theme.colors.primary}
-        disabled={isSubmitting}
-      />
-      <Button
-        title="¿Ya tienes cuenta? Inicia sesión"
-        onPress={() => navigation.navigate("Login")}
-        color={theme.colors.secondary}
-      />
     </View>
   );
 };
@@ -128,6 +53,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     backgroundColor: theme.colors.background,
     justifyContent: "center",
+    alignItems: "center",
   },
   title: {
     fontSize: theme.fontSizes.title,
@@ -136,38 +62,30 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: theme.spacing.lg,
   },
-  imageContainer: {
-    alignSelf: "center",
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.textSecondary,
-    borderRadius: 60,
-    width: 120,
-    height: 120,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   image: {
     width: 120,
     height: 120,
     borderRadius: 60,
-  },
-  imageText: {
-    textAlign: "center",
-    color: theme.colors.textSecondary,
-    fontSize: theme.fontSizes.medium,
-    fontFamily: theme.fonts.regular,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: theme.colors.textSecondary,
-    borderRadius: theme.borderRadius.small,
-    padding: theme.spacing.sm,
     marginBottom: theme.spacing.md,
+  },
+  label: {
     fontSize: theme.fontSizes.medium,
+    color: theme.colors.textPrimary,
     fontFamily: theme.fonts.regular,
-    backgroundColor: theme.colors.cardBackground,
+    marginBottom: theme.spacing.sm,
+  },
+  button: {
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.secondary,
+    borderRadius: theme.borderRadius.small,
+  },
+  buttonText: {
+    color: theme.colors.cardBackground,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.bold,
   },
 });
 
-export default RegisterScreen;
+export default PerfilScreen;
