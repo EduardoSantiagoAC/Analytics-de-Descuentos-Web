@@ -10,7 +10,7 @@ app.use(cors());
 
 app.use(express.json());
 
-// Rutas existentes de Mercado Libre si
+// Rutas existentes de Mercado Libre
 const mercadoLibreRoutes = require('./Routes/mercadoLibre');
 app.use('/mercado-libre', mercadoLibreRoutes);
 

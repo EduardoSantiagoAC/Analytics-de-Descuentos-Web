@@ -1,7 +1,7 @@
 // controllers/scrapingController.js
 const scrapeMercadoLibre = require('../services/scraperMercadoLibreService');
 const guardarProductos = require('../services/guardarProductosService');
-const Producto = require('../models/Producto');
+const Producto = require('../Models/Producto');
 
 exports.scrapeAndSave = async (req, res) => {
   try {

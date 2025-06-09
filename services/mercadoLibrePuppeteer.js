@@ -2,14 +2,16 @@ const puppeteer = require('puppeteer');
 
 // Función auxiliar para extraer precios
 function extraerPrecio(texto) {
-  const match = texto?.replace(/[^\d.,]/g, '').replace(',', '.').match(/\d+(\.\d+)?/);
+  if (!texto) return null;
+  const cleaned = texto.replace(/[^\d.,]/g, '').replace(',', '.'); // Elimina todo excepto números y puntos
+  const match = cleaned.match(/\d+(\.\d+)?/);
   return match ? parseFloat(match[0]) : null;
 }
 
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
@@ -26,11 +28,10 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     console.log(`🌐 Abriendo: ${url}`);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Intentar esperar por uno de múltiples selectores
     const selectors = [
       'li.ui-search-layout__item',
-      'div.andes-card', // Selector alternativo para páginas de promociones
-      'div.ui-search-result' // Otro posible selector
+      'div.andes-card',
+      'div.ui-search-result'
     ];
     
     let foundSelector = false;
@@ -49,11 +50,9 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
       throw new Error('No se encontraron selectores de productos en la página');
     }
 
-    // Agregar espera adicional para contenido dinámico
     await new Promise(resolve => setTimeout(resolve, 3000));
 
     const productos = await page.evaluate((max) => {
-      // Usar un selector más genérico para cubrir diferentes estructuras
       const items = document.querySelectorAll('li.ui-search-layout__item, div.andes-card, div.ui-search-result');
       const resultado = [];
 
@@ -64,9 +63,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
           const nombre = item.querySelector('a.poly-component__title, h2.ui-search-item__title, h2.andes-card__title')?.innerText.trim() || null;
           const urlProducto = item.querySelector('a.poly-component__title, a.ui-search-link')?.href || null;
 
-          // Precio con descuento
           const precioDescuentoTexto = item.querySelector('.andes-money-amount--cents-superscript .andes-money-amount__fraction, .ui-search-price__part .andes-money-amount__fraction')?.innerText || '';
-          // Precio original
           const precioOriginalTexto = item.querySelector('.andes-money-amount--previous .andes-money-amount__fraction, .ui-search-price__original-value .andes-money-amount__fraction')?.innerText || '';
 
           const imgTag = item.querySelector('img');
@@ -74,14 +71,8 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
           if (imgTag) {
             imagen = imgTag.getAttribute('src')?.trim() || '';
-            if (
-              !imagen ||
-              imagen.startsWith('data:image') ||
-              imagen.includes('placeholder.com')
-            ) {
-              imagen = imgTag.getAttribute('data-src')?.trim()
-                    || imgTag.getAttribute('data-srcset')?.trim()
-                    || '';
+            if (!imagen || imagen.startsWith('data:image') || imagen.includes('placeholder.com')) {
+              imagen = imgTag.getAttribute('data-src')?.trim() || imgTag.getAttribute('data-srcset')?.trim() || '';
             }
             if (imagen.includes(' ')) {
               imagen = imagen.split(' ')[0];
@@ -107,7 +98,6 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
       return resultado;
     }, maxResults);
 
-    // Formatear los productos y calcular descuentos
     const productosFormateados = productos.map(producto => {
       const precioConDescuento = extraerPrecio(producto.precioDescuentoTexto);
       const precioOriginal = extraerPrecio(producto.precioOriginalTexto);
