@@ -18,10 +18,10 @@ export const theme = {
     xl: 32,
   },
   fontSizes: {
-    small: 14,
-    medium: 16,
-    large: 20,
-    title: 24,
+    small: 10,
+    medium: 12,
+    large: 18,
+    title: 20,
   },
   fonts: {
     regular: 'Roboto-Regular',

@@ -6,12 +6,20 @@ import { theme } from "../theme/theme";
 const Header = () => {
   return (
     <View style={styles.container}>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>ECONOFY</Text>
+      <View>
+        <Text style={styles.title}>
+          <Text style={styles.brand}>ECONO</Text>
+          <Text style={styles.brandAccent}>FY</Text>
+        </Text>
         <Text style={styles.subtitle}>Ahorra inteligentemente</Text>
       </View>
-      <TouchableOpacity>
-        <Ionicons name="search" size={24} color={theme.colors.textPrimary} />
+      <TouchableOpacity style={styles.iconButton}>
+        <Ionicons
+          name="search"
+          size={24}
+          color={theme.colors.textPrimary}
+          style={{ opacity: 0.7 }}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -22,25 +30,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
     backgroundColor: theme.colors.cardBackground,
+    borderBottomWidth: 0.3,
+    borderBottomColor: "#ccc",
     ...theme.shadows.small,
-    marginBottom: theme.spacing.sm,
-  },
-  titleContainer: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.large, // Bordes redondeados
-    padding: theme.spacing.sm,
   },
   title: {
     fontSize: theme.fontSizes.title,
     fontFamily: theme.fonts.bold,
     color: theme.colors.textPrimary,
   },
+  brand: {
+    color: theme.colors.textPrimary,
+  },
+  brandAccent: {
+    color: theme.colors.primary,
+  },
   subtitle: {
     fontSize: theme.fontSizes.small,
+    fontFamily: theme.fonts.medium,
     color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.regular,
+    marginTop: 2,
+  },
+  iconButton: {
+    padding: theme.spacing.sm,
+    borderRadius: 100,
   },
 });
 
