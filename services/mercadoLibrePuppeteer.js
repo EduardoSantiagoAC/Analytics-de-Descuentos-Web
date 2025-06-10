@@ -12,13 +12,13 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
   // Configuración para Render
   const browser = await puppeteer.launch({
-    headless: 'new', // Usa 'new' para headless moderno
+    headless: 'new',
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage' // Evita problemas de memoria compartida
+      '--disable-dev-shm-usage'
     ],
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome' // Fallback a Chrome preinstalado
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-136.0.7103.94/chrome-linux/chrome' // Ajusta la versión si cambia
   });
 
   const page = await browser.newPage();
