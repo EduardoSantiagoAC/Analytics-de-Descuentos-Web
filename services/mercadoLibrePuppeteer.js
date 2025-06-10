@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const fs = require('fs').promises;
 const { join } = require('path');
 
 function extraerPrecio(texto) {
@@ -8,10 +9,26 @@ function extraerPrecio(texto) {
   return match ? parseFloat(match[0]) : null;
 }
 
+async function ensureChrome() {
+  const cacheDir = '/opt/render/.cache/puppeteer';
+  const chromePath = join(cacheDir, 'chrome/linux-136.0.7103.94/chrome-linux/chrome');
+
+  try {
+    await fs.access(chromePath);
+    console.log('Chrome encontrado en:', chromePath);
+    return chromePath;
+  } catch (err) {
+    console.log('Chrome no encontrado, intentando descargar...');
+    // Puppeteer intentará descargar Chrome automáticamente si no está presente
+    return null; // Dejamos que launch lo maneje
+  }
+}
+
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
 
-  // Configuración para Render, permitiendo descarga automática de Chrome
+  let executablePath = await ensureChrome();
+
   const browser = await puppeteer.launch({
     headless: 'new',
     args: [
@@ -21,7 +38,9 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
       '--single-process',
       '--no-zygote'
     ],
-    // No especificamos executablePath, Puppeteer intentará descargarlo
+    executablePath: executablePath,
+    // Permitir descarga automática si no está presente
+    ignoreDefaultArgs: ['--disable-extensions']
   }).catch(err => {
     console.error('Error al lanzar Puppeteer:', err.message);
     throw err;
