@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const { join } = require('path');
 
 function extraerPrecio(texto) {
   if (!texto) return null;
@@ -10,15 +11,31 @@ function extraerPrecio(texto) {
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
 
-  // Configuración para Render
+  // Configuración para Render con manejo de binarios
+  let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  if (!executablePath) {
+    const defaultCachePath = join('/opt/render/.cache/puppeteer');
+    executablePath = join(defaultCachePath, 'chrome/linux-136.0.7103.94/chrome-linux/chrome');
+    if (!executablePath) {
+      console.log('Intentando descargar Chrome...');
+      // Puppeteer intentará descargar Chrome si no está presente
+    }
+  }
+
   const browser = await puppeteer.launch({
     headless: 'new',
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
+      '--disable-dev-shm-usage',
+      '--single-process', // Reduce uso de recursos en Render
+      '--no-zygote'
     ],
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/opt/render/.cache/puppeteer/chrome/linux-136.0.7103.94/chrome-linux/chrome' // Ajusta la versión si cambia
+    executablePath: executablePath,
+    ignoreDefaultArgs: ['--disable-extensions'] // Evita conflictos
+  }).catch(err => {
+    console.error('Error al lanzar Puppeteer:', err.message);
+    throw err;
   });
 
   const page = await browser.newPage();
