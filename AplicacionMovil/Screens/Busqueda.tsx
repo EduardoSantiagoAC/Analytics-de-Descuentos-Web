@@ -15,7 +15,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "https://analytics-de-descuentos-web.onrender.com"; // Ajusta con tu IP
+const BACKEND_URL = "https://analytics-de-descuentos-web.vercel.app"; // Ajusta con tu IP
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const BusquedaScreen = () => {

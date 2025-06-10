@@ -52,7 +52,7 @@ const RegisterScreen = () => {
         console.log("📤 Enviando FormData sin foto...");
       }
 
-      const response = await fetch("https://analytics-de-descuentos-web.onrender.com/auth/register", {
+      const response = await fetch("https://analytics-de-descuentos-web.vercel.app", {
         method: "POST",
         body: formData,
       });

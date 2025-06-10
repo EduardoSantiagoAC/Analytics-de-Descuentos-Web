@@ -30,7 +30,7 @@ const RopaScreen = () => {
     setError("");
 
     try {
-      const response = await fetch(`https://analytics-de-descuentos-web.onrender.com/mercado-libre/buscar?q=ropa&max=10`);
+      const response = await fetch(`https://analytics-de-descuentos-web.vercel.app/mercado-libre/buscar?q=ropa&max=10`);
       console.log("Estado de la respuesta (ropa):", response.status, response.ok); // Log
       const data = await response.json();
       console.log("Respuesta completa de la API (ropa):", data); // Log

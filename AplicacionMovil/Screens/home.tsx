@@ -30,7 +30,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "https://analytics-de-descuentos-web.onrender.com"; 
+const BACKEND_URL = "https://analytics-de-descuentos-web.vercel.app"; 
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const HomeScreen = () => {
