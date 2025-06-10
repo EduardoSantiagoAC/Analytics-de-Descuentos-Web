@@ -1,18 +1,24 @@
 const puppeteer = require('puppeteer');
 
-// Función auxiliar para extraer precios
 function extraerPrecio(texto) {
   if (!texto) return null;
-  const cleaned = texto.replace(/[^\d.,]/g, '').replace(',', '.'); // Elimina todo excepto números y puntos
+  const cleaned = texto.replace(/[^\d.,]/g, '').replace(',', '.');
   const match = cleaned.match(/\d+(\.\d+)?/);
   return match ? parseFloat(match[0]) : null;
 }
 
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
+
+  // Configuración para Render
   const browser = await puppeteer.launch({
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    headless: 'new', // Usa 'new' para headless moderno
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage' // Evita problemas de memoria compartida
+    ],
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome' // Fallback a Chrome preinstalado
   });
 
   const page = await browser.newPage();

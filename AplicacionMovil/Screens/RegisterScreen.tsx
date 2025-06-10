@@ -52,7 +52,7 @@ const RegisterScreen = () => {
         console.log("📤 Enviando FormData sin foto...");
       }
 
-      const response = await fetch("http://localhost:3000/auth/register", {
+      const response = await fetch("https://analytics-de-descuentos-web.onrender.com/auth/register", {
         method: "POST",
         body: formData,
       });
