@@ -1,6 +1,4 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs').promises;
-const { join } = require('path');
 
 function extraerPrecio(texto) {
   if (!texto) return null;
@@ -9,25 +7,8 @@ function extraerPrecio(texto) {
   return match ? parseFloat(match[0]) : null;
 }
 
-async function ensureChrome() {
-  const cacheDir = '/opt/render/.cache/puppeteer';
-  const chromePath = join(cacheDir, 'chrome/linux-136.0.7103.94/chrome-linux/chrome');
-
-  try {
-    await fs.access(chromePath);
-    console.log('Chrome encontrado en:', chromePath);
-    return chromePath;
-  } catch (err) {
-    console.log('Chrome no encontrado, intentando descargar...');
-    // Puppeteer intentará descargar Chrome automáticamente si no está presente
-    return null; // Dejamos que launch lo maneje
-  }
-}
-
-async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
+async function scrapeMercadoLibrePuppeteer(query, maxResults = 5) { // Reducido a 5 para velocidad
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
-
-  let executablePath = await ensureChrome();
 
   const browser = await puppeteer.launch({
     headless: 'new',
@@ -38,8 +19,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
       '--single-process',
       '--no-zygote'
     ],
-    executablePath: executablePath,
-    // Permitir descarga automática si no está presente
+    // Vercel descargará Chrome automáticamente la primera vez
     ignoreDefaultArgs: ['--disable-extensions']
   }).catch(err => {
     console.error('Error al lanzar Puppeteer:', err.message);
@@ -57,7 +37,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
   try {
     console.log(`🌐 Abriendo: ${url}`);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 5000 }); // Reducido a 5s
 
     const selectors = [
       'li.ui-search-layout__item',
@@ -68,7 +48,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     let foundSelector = false;
     for (const selector of selectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 20000 });
+        await page.waitForSelector(selector, { timeout: 3000 }); // Reducido a 3s
         console.log(`✅ Selector encontrado: ${selector}`);
         foundSelector = true;
         break;
@@ -81,7 +61,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
       throw new Error('No se encontraron selectores de productos en la página');
     }
 
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Reducido a 1s
 
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item, div.andes-card, div.ui-search-result');
