@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const scrapeMercadoLibrePuppeteer = require('../services/mercadoLibrePuppeteer');
+const scrapeML = require('../services/mercadoLibrePuppeteer'); // Asegúrate de usar el archivo correcto
 const Producto = require('../Models/Producto');
 
 router.get('/buscar', async (req, res) => {
@@ -11,13 +11,12 @@ router.get('/buscar', async (req, res) => {
   }
 
   try {
-    const productos = await scrapeMercadoLibrePuppeteer(q, parseInt(max) || 10);
+    const productos = await scrapeML(q, parseInt(max) || 10);
 
     if (productos.length === 0) {
       return res.status(404).json({ mensaje: 'No se encontraron productos.' });
     }
 
-    // Guardar o actualizar los productos en MongoDB
     const ops = productos.map(p => ({
       updateOne: {
         filter: { urlProducto: p.urlProducto },
@@ -35,7 +34,6 @@ router.get('/buscar', async (req, res) => {
     }));
 
     await Producto.bulkWrite(ops);
-
     res.json(productos);
   } catch (error) {
     console.error('❌ Error en /mercado-libre/buscar:', error);

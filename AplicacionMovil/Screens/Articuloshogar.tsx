@@ -30,7 +30,7 @@ const HogarScreen = () => {
     setError("");
 
     try {
-      const response = await fetch(`https://analytics-de-descuentos-web.vercel.app/mercado-libre/buscar?q=hogar&max=10`);
+      const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=hogar&max=10`);
       console.log("Estado de la respuesta (hogar):", response.status, response.ok); // Log
       const data = await response.json();
       console.log("Respuesta completa de la API (hogar):", data); // Log

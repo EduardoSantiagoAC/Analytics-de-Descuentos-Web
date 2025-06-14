@@ -7,16 +7,19 @@ const app = express();
 
 // Habilitar CORS para todas las rutas y orígenes
 app.use(cors());
-
 app.use(express.json());
 
-// Rutas existentes de Mercado Libre
+// Rutas
 const mercadoLibreRoutes = require('./Routes/mercadoLibre');
-app.use('/mercado-libre', mercadoLibreRoutes);
-
-// Rutas de autenticación
 const authRoutes = require('./Routes/auth');
+app.use('/mercado-libre', mercadoLibreRoutes);
 app.use('/auth', authRoutes);
+
+// Manejo de errores global
+app.use((err, req, res, next) => {
+  console.error('❌ Error global:', err.stack);
+  res.status(500).json({ error: 'Error interno del servidor', details: process.env.NODE_ENV === 'development' ? err.message : null });
+});
 
 const PORT = process.env.PORT || 3000;
 

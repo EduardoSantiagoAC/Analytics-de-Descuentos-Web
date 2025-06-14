@@ -1,48 +1,16 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs').promises;
-const path = require('path');
 
+// Función auxiliar para extraer precios
 function extraerPrecio(texto) {
-  if (!texto) return null;
-  const cleaned = texto.replace(/[^\d.,]/g, '').replace(',', '.');
-  const match = cleaned.match(/\d+(\.\d+)?/);
+  const match = texto?.replace(/[^\d.,]/g, '').replace(',', '.').match(/\d+(\.\d+)?/);
   return match ? parseFloat(match[0]) : null;
 }
 
-async function ensureChrome() {
-  const cacheDir = '/tmp/.cache/puppeteer'; // Usar /tmp para Vercel
-  const chromePath = path.join(cacheDir, 'chrome/linux-136.0.7103.94/chrome-linux/chrome');
-
-  try {
-    await fs.access(chromePath);
-    console.log('Chrome encontrado en:', chromePath);
-    return chromePath;
-  } catch (err) {
-    console.log('Chrome no encontrado, intentando descargar...');
-    return null; // Dejamos que launch lo maneje
-  }
-}
-
-async function scrapeMercadoLibrePuppeteer(query, maxResults = 3) { // Reducido a 3
+async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
-
-  const executablePath = await ensureChrome();
-
   const browser = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--single-process',
-      '--no-zygote'
-    ],
-    executablePath: executablePath,
-    // Intentar descargar si no está presente
-    ignoreDefaultArgs: ['--disable-extensions']
-  }).catch(err => {
-    console.error('Error al lanzar Puppeteer:', err.message);
-    throw err;
+    headless: 'new', // Cambiado para producción
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
   const page = await browser.newPage();
@@ -50,13 +18,13 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 3) { // Reducido 
   page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
   await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' //Buscador basico y predeterminado
   );
   await page.setViewport({ width: 1366, height: 768 });
 
   try {
     console.log(`🌐 Abriendo: ${url}`);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 4000 }); // Reducido a 4s
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     const selectors = [
       'li.ui-search-layout__item',
@@ -67,7 +35,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 3) { // Reducido 
     let foundSelector = false;
     for (const selector of selectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 2000 }); // Reducido a 2s
+        await page.waitForSelector(selector, { timeout: 20000 });
         console.log(`✅ Selector encontrado: ${selector}`);
         foundSelector = true;
         break;
@@ -80,7 +48,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 3) { // Reducido 
       throw new Error('No se encontraron selectores de productos en la página');
     }
 
-    await new Promise(resolve => setTimeout(resolve, 500)); // Reducido a 0.5s
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item, div.andes-card, div.ui-search-result');

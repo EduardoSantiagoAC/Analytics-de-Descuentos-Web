@@ -52,7 +52,7 @@ const RegisterScreen = () => {
         console.log("📤 Enviando FormData sin foto...");
       }
 
-      const response = await fetch("https://analytics-de-descuentos-web.vercel.app", {
+      const response = await fetch("http://localhost:3000/auth/register", {
         method: "POST",
         body: formData,
       });
