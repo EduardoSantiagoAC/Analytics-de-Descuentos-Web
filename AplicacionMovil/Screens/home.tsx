@@ -6,7 +6,6 @@ import {
   Text,
   ActivityIndicator,
   TextInput,
-  Button,
   Keyboard,
   Platform,
   TouchableOpacity,
@@ -30,7 +29,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "http://83-229-35-215.cloud-xip.com:3000"; 
+const BACKEND_URL = "http://83-229-35-215.cloud-xip.com:3000"; // url del backend en kamatera
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const HomeScreen = () => {
@@ -61,18 +60,19 @@ const HomeScreen = () => {
 
   const convertirProducto = (p: any, index: number): Product => {
     console.log("📋 Producto crudo:", JSON.stringify(p, null, 2));
-    // Manejo robusto de precios: elimina comas y convierte a número
     const parsePrice = (value: any): number => {
       if (typeof value === "number") return value;
       if (typeof value === "string") {
-        const cleanedValue = value.replace(/[^0-9.]/g, ""); // Elimina todo excepto números y puntos
+        const cleanedValue = value.replace(/[^0-9.]/g, "");
         return parseFloat(cleanedValue) || 0;
       }
       return 0;
     };
 
+    // Asegurar IDs únicos con un hash simple basado en el índice y el título
+    const uniqueId = `${p.urlProducto || p._id || p.title || 'product'}-${index}`;
     return {
-      id: p.urlProducto || p._id || `product-${index}`,
+      id: uniqueId,
       title: p.nombre || p.title || "Sin título",
       image: p.imagen || p.image || DEFAULT_IMAGE,
       oldPrice: parsePrice(p.precioOriginal || p.oldPrice || p.precio || p.price || 0),
@@ -88,21 +88,21 @@ const HomeScreen = () => {
     setProductos([]);
     try {
       const url = `${BACKEND_URL}/mercado-libre/buscar?q=ofertas&max=10`;
-      console.log(`🌐 Enviando solicitud a ${url}`);
+      console.log(`🌐 Enviando solicitud inicial a ${url}`);
       const response = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      console.log("✅ Estado de la respuesta:", response.status, response.ok);
+      console.log("✅ Estado de la respuesta inicial:", response.status, response.ok);
       const data = await response.json();
-      console.log("📊 Respuesta completa de la API:", JSON.stringify(data, null, 2));
+      console.log("📊 Respuesta completa de la API inicial:", JSON.stringify(data, null, 2));
       if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
       const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(
         (item: any, index: number) => convertirProducto(item, index)
       );
-      console.log("📋 Productos convertidos:", JSON.stringify(productosConvertidos, null, 2));
+      console.log("📋 Productos convertidos iniciales:", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
-        console.warn("⚠️ No se encontraron productos en la respuesta");
+        console.warn("⚠️ No se encontraron productos en la respuesta inicial");
       }
       setProductos(productosConvertidos.length ? productosConvertidos : [
         {
@@ -117,7 +117,7 @@ const HomeScreen = () => {
       ]);
     } catch (err: any) {
       console.error("❌ Error cargando productos iniciales:", err.message);
-      setError(`Error al cargar productos: ${err.message}`);
+      setError(`Error al cargar productos iniciales: ${err.message}`);
       setProductos([
         {
           id: "1",
@@ -144,40 +144,35 @@ const HomeScreen = () => {
 
     try {
       const url = `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(termino)}&max=10`;
-      console.log(`🌐 Enviando solicitud a ${url}`);
+      console.log(`🌐 Enviando solicitud de búsqueda a ${url}`);
       const response = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      console.log("✅ Estado de la respuesta (búsqueda):", response.status, response.ok);
+      console.log("✅ Estado de la respuesta de búsqueda:", response.status, response.ok);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("📊 Respuesta de error del backend:", errorText);
+        throw new Error(`Error HTTP ${response.status}: ${errorText || "Sin detalles"}`);
+      }
       const data = await response.json();
-      console.log("📊 Respuesta completa de la API (búsqueda):", JSON.stringify(data, null, 2));
-      if (!response.ok) throw new Error(data.error || `Error HTTP ${response.status}`);
+      console.log("📊 Respuesta completa de la API de búsqueda:", JSON.stringify(data, null, 2));
       const productosConvertidos = (Array.isArray(data) ? data : data.productos || []).map(
         (item: any, index: number) => convertirProducto(item, index)
       );
-      console.log("📋 Productos convertidos (búsqueda):", JSON.stringify(productosConvertidos, null, 2));
+      console.log("📋 Productos convertidos de búsqueda:", JSON.stringify(productosConvertidos, null, 2));
       if (productosConvertidos.length === 0) {
         console.warn("⚠️ No se encontraron productos en la búsqueda");
+        setError("No se encontraron productos para esta búsqueda.");
       }
-      setProductos(productosConvertidos.length ? productosConvertidos : [
-        {
-          id: "1",
-          title: "Producto de Prueba",
-          image: DEFAULT_IMAGE,
-          oldPrice: 200,
-          price: 150,
-          discount: 25,
-          category: "General",
-        },
-      ]);
+      setProductos(productosConvertidos.length ? productosConvertidos : []);
     } catch (err: any) {
       console.error("❌ Error en búsqueda:", err.message);
-      setError(`Error al buscar productos: ${err.message}`);
+      setError(`Error al buscar productos: ${err.message}. Verifica la conexión o el backend.`);
       setProductos([
         {
           id: "1",
-          title: "Producto de Prueba",
+          title: "Producto de Prueba (Error)",
           image: DEFAULT_IMAGE,
           oldPrice: 200,
           price: 150,
