@@ -30,7 +30,7 @@ const ElectronicaScreen = () => {
     setError("");
 
     try {
-      const response = await fetch(`http://localhost:3000/mercado-libre/buscar?q=electrónica&max=10`);
+      const response = await fetch(`http://83-229-35-215.cloud-xip.com:3000/mercado-libre/buscar?q=electrónica&max=10`);
       console.log("Estado de la respuesta (electrónica):", response.status, response.ok); // Log
       const data = await response.json();
       console.log("Respuesta completa de la API (electrónica):", data); // Log

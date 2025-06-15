@@ -15,7 +15,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "http://localhost:3000"; // Ajusta con tu IP
+const BACKEND_URL = "http://83-229-35-215.cloud-xip.com:3000"; // Ajusta con tu IP
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const BusquedaScreen = () => {

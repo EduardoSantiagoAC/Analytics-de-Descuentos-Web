@@ -52,7 +52,7 @@ const RegisterScreen = () => {
         console.log("📤 Enviando FormData sin foto...");
       }
 
-      const response = await fetch("http://localhost:3000/auth/register", {
+      const response = await fetch("http://83-229-35-215.cloud-xip.com:3000/auth/register", {
         method: "POST",
         body: formData,
       });
