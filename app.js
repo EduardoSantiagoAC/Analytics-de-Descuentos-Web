@@ -5,8 +5,17 @@ require('dotenv').config();
 
 const app = express();
 
-// Habilitar CORS para todas las rutas y orígenes
-app.use(cors());
+// Configurar CORS para permitir múltiples orígenes (desarrollo local)
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:8081'];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(express.json());
 
 // Rutas
@@ -18,7 +27,7 @@ app.use('/auth', authRoutes);
 // Manejo de errores global
 app.use((err, req, res, next) => {
   console.error('❌ Error global:', err.stack);
-  res.status(500).json({ error: 'Error interno del servidor', details: process.env.NODE_ENV === 'development' ? err.message : null });
+  res.status(500).json({ error: 'Error interno del servidor' });
 });
 
 const PORT = process.env.PORT || 3000;

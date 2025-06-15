@@ -9,12 +9,12 @@ function extraerPrecio(texto) {
 /**
  * Scrapea productos de MercadoLibre usando Puppeteer.
  * @param {string} query - Término de búsqueda.
- * @param {number} maxResults - Máximo de resultados a retornar (por defecto 15).
+ * @param {number} maxResults - Máximo de resultados a retornar (por defecto 5).
  * @returns {Promise<Array>} Lista de productos formateados.
  */
-async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
+async function scrapeMercadoLibrePuppeteer(query, maxResults = 5) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
-  // Inicia el navegador en modo headless para producción
+  // Inicia el navegador en modo headless para localhost
   const browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -28,12 +28,12 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   await page.setUserAgent(
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
   );
-  await page.setViewport({ width: 1366, height: 768 });
+  await page.setViewport({ width: 1280, height: 720 });
 
   try {
     console.log(`🌐 Abriendo: ${url}`);
     // Navega a la URL y espera a que el DOM esté cargado
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
     // Lista de selectores posibles para los productos
     const selectors = [
@@ -46,7 +46,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     // Intenta encontrar un selector válido
     for (const selector of selectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 20000 });
+        await page.waitForSelector(selector, { timeout: 10000 });
         console.log(`✅ Selector encontrado: ${selector}`);
         foundSelector = true;
         break;
@@ -60,7 +60,7 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
     }
 
     // Espera adicional para asegurar que el contenido dinámico cargue
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Extrae información de los productos desde el DOM
     const productos = await page.evaluate((max) => {
@@ -111,16 +111,14 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
 
     // Formatea los productos con precios y descuentos calculados
     const productosFormateados = productos.map(producto => {
-      const precioConDescuento = extraerPrecio(producto);
-      const match = productoText?.match(/\d+\.\d{2}/g)?.[1];
-      const precioDescuento = extraerPrecio(producto.preciDescuentoTexto);
-      const precioOriginal = extraerPrecio(producto.prcioOriginalTexto);
+      const precioConDescuento = extraerPrecio(producto.precioDescuentoTexto);
+      const precioOriginal = extraerPrecio(producto.precioOriginalTexto);
 
       let porcentajeDescuento = 0;
       let estadoDescuento = 'Normal';
       let esOferta = false;
 
-      if (precioOriginal && precioDescuento && precioOrigial > precioConDescuent) {
+      if (precioOriginal && precioConDescuento && precioOriginal > precioConDescuento) {
         porcentajeDescuento = Math.round(((precioOriginal - precioConDescuento) / precioOriginal) * 100);
         estadoDescuento = 'Descuento';
         esOferta = porcentajeDescuento > 10;
@@ -151,4 +149,4 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 15) {
   }
 }
 
-module.exports = scrapeMercadoLibreLibrePuppeteer;
+module.exports = scrapeMercadoLibrePuppeteer;
