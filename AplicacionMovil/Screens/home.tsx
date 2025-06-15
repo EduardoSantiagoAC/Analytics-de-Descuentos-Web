@@ -29,7 +29,7 @@ interface Product {
   category: string;
 }
 
-const BACKEND_URL = "http://83-229-35-215.cloud-xip.com:3000"; // url del backend en kamatera
+const BACKEND_URL = "http://83-229-35-215.cloud-xip.com:3000";
 const DEFAULT_IMAGE = "https://dummyimage.com/150x150/ccc/000.png&text=Producto";
 
 const HomeScreen = () => {
@@ -142,12 +142,17 @@ const HomeScreen = () => {
     setError("");
     setProductos([]);
 
+    let timeoutId; // Declaración fuera del try para accesibilidad en finally
     try {
       const url = `${BACKEND_URL}/mercado-libre/buscar?q=${encodeURIComponent(termino)}&max=10`;
       console.log(`🌐 Enviando solicitud de búsqueda a ${url}`);
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 15000); // Timeout de 15 segundos
+
       const response = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
       });
       console.log("✅ Estado de la respuesta de búsqueda:", response.status, response.ok);
       if (!response.ok) {
@@ -168,7 +173,11 @@ const HomeScreen = () => {
       setProductos(productosConvertidos.length ? productosConvertidos : []);
     } catch (err: any) {
       console.error("❌ Error en búsqueda:", err.message);
-      setError(`Error al buscar productos: ${err.message}. Verifica la conexión o el backend.`);
+      if (err.name === 'AbortError') {
+        setError("La solicitud tardó demasiado (más de 15 segundos). Verifica tu conexión o el servidor.");
+      } else {
+        setError(`Error al buscar productos: ${err.message}. Verifica la conexión o el backend.`);
+      }
       setProductos([
         {
           id: "1",
@@ -181,6 +190,7 @@ const HomeScreen = () => {
         },
       ]);
     } finally {
+      if (timeoutId) clearTimeout(timeoutId); // Limpia el timeout si existe
       setCargando(false);
     }
   };
