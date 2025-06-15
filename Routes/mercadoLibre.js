@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const scrapeML = require('../services/mercadoLibrePuppeteer'); // Asegúrate de usar el archivo correcto
-const Producto = require('../Models/Producto');
+const scrapeML = require('../services/mercadoLibrePuppeter');
 
 router.get('/buscar', async (req, res) => {
   const { q, max } = req.query;
@@ -11,29 +10,12 @@ router.get('/buscar', async (req, res) => {
   }
 
   try {
-    const productos = await scrapeML(q, parseInt(max) || 10);
+    const productos = await scrapeML(q, parseInt(max) || 5);
 
     if (productos.length === 0) {
       return res.status(404).json({ mensaje: 'No se encontraron productos.' });
     }
 
-    const ops = productos.map(p => ({
-      updateOne: {
-        filter: { urlProducto: p.urlProducto },
-        update: {
-          $set: p,
-          $push: {
-            historicoPrecios: {
-              precio: p.precio,
-              fecha: new Date()
-            }
-          }
-        },
-        upsert: true
-      }
-    }));
-
-    await Producto.bulkWrite(ops);
     res.json(productos);
   } catch (error) {
     console.error('❌ Error en /mercado-libre/buscar:', error);

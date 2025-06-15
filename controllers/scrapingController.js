@@ -1,6 +1,5 @@
-// controllers/scrapingController.js
-const scrapeMercadoLibre = require('../services/scraperMercadoLibreService');
-const guardarProductos = require('../services/guardarProductosService');
+const scrapeMercadoLibre = require('../services/mercadoLibrePuppeter');
+const guardarProductos = require('../services/guardarProductoService');
 const Producto = require('../Models/Producto');
 
 exports.scrapeAndSave = async (req, res) => {
@@ -14,7 +13,6 @@ exports.scrapeAndSave = async (req, res) => {
       });
     }
 
-    // Buscar productos recientes de MercadoLibre que coincidan con el término
     const productosExistentes = await Producto.find({
       nombre: new RegExp(producto, 'i'),
       tienda: 'MercadoLibre'
@@ -33,7 +31,6 @@ exports.scrapeAndSave = async (req, res) => {
       });
     }
 
-    // Si no hay productos recientes, hacer scraping
     const productosScrapeados = await scrapeMercadoLibre(producto);
 
     if (productosScrapeados.length === 0) {

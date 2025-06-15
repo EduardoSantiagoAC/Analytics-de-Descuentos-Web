@@ -5,8 +5,8 @@ require('dotenv').config();
 
 const app = express();
 
-// Configurar CORS para permitir múltiples orígenes (desarrollo local)
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:8081'];
+// Configurar CORS para permitir orígenes específicos (ajusta en producción)
+const allowedOrigins = ['http://localhost:8081', 'https://tu-dominio.com']; // Ajusta según tu frontend
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -32,13 +32,14 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('✅ Conectado a MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Servidor escuchando en http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ Error al conectar a MongoDB:', err.message);
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('✅ Conectado a MongoDB');
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor escuchando en http://0.0.0.0:${PORT}`);
   });
+}).catch((err) => {
+  console.error('❌ Error al conectar a MongoDB:', err.message);
+});

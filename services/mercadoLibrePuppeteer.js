@@ -14,10 +14,11 @@ function extraerPrecio(texto) {
  */
 async function scrapeMercadoLibrePuppeteer(query, maxResults = 5) {
   const url = `https://listado.mercadolibre.com.mx/${encodeURIComponent(query)}`;
-  // Inicia el navegador en modo headless para localhost
+  // Inicia el navegador en modo headless para servidor
   const browser = await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote'],
+    executablePath: '/usr/bin/chromium-browser'
   });
 
   const page = await browser.newPage();
@@ -32,18 +33,10 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 5) {
 
   try {
     console.log(`🌐 Abriendo: ${url}`);
-    // Navega a la URL y espera a que el DOM esté cargado
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-    // Lista de selectores posibles para los productos
-    const selectors = [
-      'li.ui-search-layout__item',
-      'div.andes-card',
-      'div.ui-search-result'
-    ];
-    
+    const selectors = ['li.ui-search-layout__item', 'div.andes-card', 'div.ui-search-result'];
     let foundSelector = false;
-    // Intenta encontrar un selector válido
     for (const selector of selectors) {
       try {
         await page.waitForSelector(selector, { timeout: 10000 });
@@ -59,17 +52,14 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 5) {
       throw new Error('No se encontraron selectores de productos en la página');
     }
 
-    // Espera adicional para asegurar que el contenido dinámico cargue
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Extrae información de los productos desde el DOM
     const productos = await page.evaluate((max) => {
       const items = document.querySelectorAll('li.ui-search-layout__item, div.andes-card, div.ui-search-result');
       const resultado = [];
 
       for (let i = 0; i < items.length && resultado.length < max; i++) {
         const item = items[i];
-
         try {
           const nombre = item.querySelector('a.poly-component__title, h2.ui-search-item__title, h2.andes-card__title')?.innerText.trim() || null;
           const urlProducto = item.querySelector('a.poly-component__title, a.ui-search-link')?.href || null;
@@ -105,11 +95,9 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 5) {
           continue;
         }
       }
-
       return resultado;
     }, maxResults);
 
-    // Formatea los productos con precios y descuentos calculados
     const productosFormateados = productos.map(producto => {
       const precioConDescuento = extraerPrecio(producto.precioDescuentoTexto);
       const precioOriginal = extraerPrecio(producto.precioOriginalTexto);
@@ -144,7 +132,6 @@ async function scrapeMercadoLibrePuppeteer(query, maxResults = 5) {
     console.error(`❌ Error en scraping MercadoLibre con Puppeteer:`, err.stack);
     return [];
   } finally {
-    // Cierra el navegador
     await browser.close();
   }
 }
